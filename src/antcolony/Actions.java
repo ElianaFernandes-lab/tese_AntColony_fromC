@@ -97,8 +97,8 @@ public class Actions {
 		// Rule 2: if a node is allocated to a hub, it cannot become a hub itself (except self-allocation)
 		if (is_not_hub > 0) {
 			for (int i = 0; i < nr_nodes; i++) {
-				if (ant.avail_tau[i][node][prod] > 0) {
-					ant.avail_tau[i][node][prod] = 0;
+				if (ant.avail_tau[prod][i][node] > 0) {
+					ant.avail_tau[prod][i][node] = 0;
 					logHistory("ants.avail_tau[" + i + "][" + node + "][" + prod + "] = 0");
 				}
 			}
@@ -173,7 +173,7 @@ public class Actions {
 	public static double dedicateHub(PNH indices, Data dados, Ant ant, Aco a, int k, double temp_cost) {
 
 		if (indices.node != indices.hub &&
-				ant.x[indices.hub][indices.prod] != indices.hub &&
+				ant.x[indices.prod][indices.hub]!= indices.hub &&
 				ant.avail_tau[indices.prod][indices.hub][indices.hub]> 0) {
 
 			int prod = indices.prod;

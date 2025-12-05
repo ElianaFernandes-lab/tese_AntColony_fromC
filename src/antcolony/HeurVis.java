@@ -87,7 +87,7 @@ public class HeurVis {
             for (int p = 0; p < nbProducts; p++) {
                 for (int i = 0; i < nbNodes; i++) {
                     if (this.tfc[i][p] > 1e-9 && this.hubFixedCost[i][p] > 1e-9) {
-                        double value = pre_p.allow[i][i][p] * aux1_eta / (this.tfc[i][p] * this.hubFixedCost[i][p]);
+                        double value = pre_p.allow[p][i][i] * aux1_eta / (this.tfc[i][p] * this.hubFixedCost[i][p]);
                         this.eta[i][i][p] = Math.max(value, 1e-9);  // avoid zero
                     } else {
                         this.eta[i][i][p] = 1e-9;

@@ -89,7 +89,7 @@ public class Roulette {
         for (int p = 0; p < dados.nbProducts; p++) {
             for (int i = 0; i < dados.nbNodes; i++) {
                 for (int j = 0; j < dados.nbNodes; j++) {
-                    if (ants.avail_tau[i][j][p] > 0 && 
+                    if (ants.avail_tau[p][i][j] > 0 && 
                         ants.avail_cap[j][p] >= dados.O[i][p] + 1e-9) {
 
                         double tau = a_param.tau[i][j][p];

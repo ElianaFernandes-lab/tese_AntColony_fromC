@@ -34,7 +34,7 @@ public class CloseRandomHub {
         Counters nr = Counting.countAll(dados.nbProducts, dados.nbNodes, iter);
 
         // Temporary solution and capacities (to test move without committing)
-        int[][] x_temp = new int[dados.nbNodes][dados.nbProducts];
+        int[][] x_temp = new int[dados.nbProducts][dados.nbNodes];
         double[][] temp_cap = new double[dados.nbNodes][dados.nbProducts];
 
         // Deep copy current best solution
