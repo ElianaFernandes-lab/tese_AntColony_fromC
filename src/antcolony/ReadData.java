@@ -23,6 +23,7 @@ public class ReadData {
      * Data structure holding the problem instance
      */
     public static class Data {
+    	
         public int nbNodes = 0;
         public int nbProducts = 0;
         public double[][][] w;  // w[i][j][p] = flow from i to j for product p

@@ -72,7 +72,7 @@ public class AcoVar {
 	public static final int SCL_P = 1;
 	public static final boolean SCAL_LR = true;
 
-	public static final String INPUT_PATH = "inputfiles";
+	public static final String INPUT_PATH = "/Users/elianafernandes/Documents/Eclipse_projs/tese2025/tese_AntColony_fromC/src/inputfiles/";
 	// Used for selection in the pseudo-random proportional rule
 	public static final double Q0 = 0.1;
 
