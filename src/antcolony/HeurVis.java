@@ -1,6 +1,7 @@
 package antcolony;
 
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 
 /**
  * HeurVis.java

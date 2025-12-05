@@ -8,12 +8,16 @@ package antcolony;
  */
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Scanner;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import antcolony.constants.AcoVar;
+
 public class ReadData {
+	
+	private static final Logger log = LogManager.getLogger(ReadData.class);
 
     /**
      * Data structure holding the problem instance
@@ -64,7 +68,8 @@ public class ReadData {
      */
     public static Data readData(String fichIn) {
         Data dados = null;
-        try (Scanner scanner = new Scanner(new File(fichIn))) {
+        String input = AcoVar.INPUT_PATH + fichIn;
+        try (Scanner scanner = new Scanner(new File(input))) {
 
             // Read nbNodes and nbProducts
             int nbNodes = scanner.nextInt();
@@ -123,7 +128,9 @@ public class ReadData {
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
                     dados.gamma[i][p] = scanner.nextDouble();
-                    logDat("dados.Gamma[" + i + "][" + p + "]= " + dados.gamma[i][p]);
+                    if (AcoVar.DAT_HIST) {
+                    	log.info("dados.Gamma[{}][{}]= " +i, p,  dados.gamma[i][p]);
+                    }
                 }
             }
 
@@ -150,7 +157,10 @@ public class ReadData {
                     for (int j = 0; j < nbNodes; j++) {
                         dados.O[i][p] += dados.w[i][j][p];
                     }
-                    logDat("dados.O[" + i + "][" + p + "]= " + dados.O[i][p]);
+                    if (AcoVar.DAT_HIST) {
+                    	log.info("dados.O[{}][{}]= " ,i,p, dados.O[i][p]);
+                    }
+                    
                 }
             }
 
@@ -165,23 +175,10 @@ public class ReadData {
             }
 
         } catch (FileNotFoundException e) {
-            System.err.println("Input file could not be opened: " + fichIn);
+        	log.error("Input file could not be opened: {}", fichIn);
             System.exit(1);
         }
 
         return dados;
-    }
-
-    // ===================================================================
-    // Logging for DAT_HIST
-    // ===================================================================
-    private static void logDat(String msg) {
-        if (AcoVar.DAT_HIST) {
-            try (PrintWriter out = new PrintWriter(new FileWriter("history1.txt", true))) {
-                out.println(msg);
-            } catch (IOException e) {
-                System.err.println("Error writing to history1.txt: " + e.getMessage());
-            }
-        }
     }
 }

@@ -3,6 +3,7 @@ package antcolony;
 import antcolony.GetSolutions.Solution;
 import antcolony.GetSolutions.SolutionX;
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 import antcolony.ortools.HiGHSLR;
 import antcolony.ortools.HiGHSMILP;
 

@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 import antcolony.Aco;
-import antcolony.AcoVar;
 import antcolony.Ant;
 import antcolony.Best;
 import antcolony.ComputeGap.Gap;
@@ -23,6 +22,7 @@ import antcolony.Ind;
 import antcolony.Iteration;
 import antcolony.PreProc;
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 import antcolony.Roulette;
 import antcolony.UnifRand;
 

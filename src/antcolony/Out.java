@@ -13,6 +13,8 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
+import antcolony.constants.AcoVar;
+
 public class Out {
 
     private static final DecimalFormat df = new DecimalFormat("0.00", 

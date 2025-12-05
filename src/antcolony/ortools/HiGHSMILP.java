@@ -11,10 +11,10 @@ import com.google.ortools.linearsolver.MPObjective;
 import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
 
-import antcolony.AcoVar;
 import antcolony.GetSolutions;
 import antcolony.GetSolutions.Solution;
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 
 public class HiGHSMILP {
 

@@ -1,4 +1,4 @@
-package antcolony;
+package antcolony.constants;
 /**
  * acovar.java
  * Translated from acovar.h (originally by Eliana Fernandes)
@@ -72,6 +72,7 @@ public class AcoVar {
 	public static final int SCL_P = 1;
 	public static final boolean SCAL_LR = true;
 
+	public static final String INPUT_PATH = "inputfiles";
 	// Used for selection in the pseudo-random proportional rule
 	public static final double Q0 = 0.1;
 

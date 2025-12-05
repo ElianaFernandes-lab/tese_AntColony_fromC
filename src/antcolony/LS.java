@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 
 public class LS {
 

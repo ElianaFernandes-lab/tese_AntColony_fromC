@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 
 public class CloseRandomHub {
 

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 
 public class CloseMostEmptyHub {
 
