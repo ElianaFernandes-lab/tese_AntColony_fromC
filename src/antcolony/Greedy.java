@@ -16,7 +16,7 @@ public class Greedy {
 	 * @param ant The current ant state (Ant).
 	 * @return An 'Ind' object containing the indices of the chosen component.
 	 */
-	public static Ind run(int antLife, Data dados, Aco a_param, Ant ant) {
+	public static PNH run(int antLife, Data dados, Aco a_param, Ant ant) {
 
 		int p, i, j;
 		int flag = 0;
@@ -69,6 +69,6 @@ public class Greedy {
 			}
 		}
 
-		return new Ind(prod, node, hub);
+		return new PNH(prod, node, hub);
 	}
 }

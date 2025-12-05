@@ -7,14 +7,20 @@ import antcolony.constants.AcoVar;
 import antcolony.ortools.HiGHSLR;
 import antcolony.ortools.HiGHSMILP;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class RunAco {
 
+	
+	private static final Logger log = LogManager.getLogger(PreProc.class);
+	
 	protected static final double MAX_COST = 1e10;
 	private static final String BEST_LOG = "best.txt";
 	private static final String GAP_IN = "out_best.txt";
-
+	
 	public static void runAco(Data dat, String fichIn, String fichOut) {
-		System.out.println("START RUN ACO - " + fichIn);
+		log.info("START RUN ACO - " + fichIn);
 
 		int nbNodes = dat.nbNodes;
 		int nbProducts = dat.nbProducts;
@@ -28,7 +34,7 @@ public class RunAco {
 		int sum_available; // sum of available solution components to be added (used to check end of solution construction or infeasibility)
 		int sum_remaining;
 
-		Ind index = null;
+		PNH index = null;
 		Aco a;
 		PreProc pre;
 		Solution sol = null;
@@ -47,7 +53,7 @@ public class RunAco {
 					scalParam += dat.f[i][p] + dat.g[i];
 				}
 			}
-			System.out.println("\nscal_param = " + scalParam + "\n");
+			log.info("\nscal_param = " + scalParam + "\n");
 		}
 
 		// ===================================================================
@@ -67,14 +73,14 @@ public class RunAco {
 		// 3. CPLEX Lagrangian Relaxation (optional)
 		// ===================================================================
 		if (AcoVar.SCAL_LR) {
-			System.out.println("COMPUTING CPLEX LR");
+			log.info("COMPUTING CPLEX LR");
 			try {
 				a = HiGHSLR.run(tLR, scalParam, dat, a);
 			} catch (Exception e) {
 				System.err.println("Error while running HiGHS LR:");
 				e.printStackTrace();
 			}  // You need to implement this
-			System.out.println("FINISHED COMPUTING HiGHS LR");
+			log.info("FINISHED COMPUTING HiGHS LR");
 		}
 
 		if (!AcoVar.REP) {
@@ -101,7 +107,7 @@ public class RunAco {
 		}
 
 		///////// ///////// ///////// //////     HEURISTIC VISIBILITY        ///////// ///////// ///////// /////////
-		HeurVis hv = new HeurVis(dat.nbNodes, dat.nbProducts);
+		HeurVis hv = new HeurVis(dat, pre);
 		///////// ///////// ///////// //////       END HEURISTIC VISIBILITY         ///////// ///////// ///////// /////////
 
 		///////// ///////// ///////// ///////// ///////// ///////// ///////// ///////// ///////// ///////// /////////
@@ -230,7 +236,7 @@ public class RunAco {
 
 						/// not necessary but left here just in case
 						if(ants[k].avail_cap[index.hub][index.prod] < 0){
-							System.err.println("ERROR");
+							log.error("ERROR ON CAPACITY");
 						}
 
 						// open hub if already not opened
@@ -416,11 +422,11 @@ public class RunAco {
 		int it_best=better.nr_iter; 
 		if(global_best<max_cost){
 			sol = GetSolutions.getIterSolution(dat, better);
-			System.out.println("better.cost = " + better.cost);
+			log.info("better.cost = " + better.cost);
 		} else {
-			System.out.println("NO SOLUTION FOUND");
+			log.info("NO SOLUTION FOUND");
 		}
-		System.out.println("before cplex");
+		log.info("before cplex");
 
 		if(global_best<max_cost){
 			HiGHSMILP.solve(dat, sol, better.cost, fichIn, fichOut);
@@ -434,10 +440,10 @@ public class RunAco {
 
 
 		} else {
-			System.out.println("NO SOLUTION FOUND");
+			log.info("NO SOLUTION FOUND");
 		}
 
-		System.out.println("after cplex");
+		log.info("after cplex");
 		if(global_best<max_cost){
 			StringBuilder sb = new StringBuilder("iter[")
 					.append(it_best)
@@ -450,9 +456,9 @@ public class RunAco {
 					.append("global_best = ")
 					.append(global_best)
 					.append("\n");
-			System.out.println(sb.toString());
+			log.info(sb.toString());
 		} else {
-			System.out.println("NO SOLUTION FOUND");
+			log.info("NO SOLUTION FOUND");
 		}
 
 	}

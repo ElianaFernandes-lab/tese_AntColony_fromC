@@ -18,7 +18,7 @@ public class Actions {
 	// =====================================================================
 	// 1. Add a solution component (x_node^prod = hub)
 	// =====================================================================
-	public static double addSolutionComponent(Ind indices, Data dados, Ant ant, double temp_cost) {
+	public static double addSolutionComponent(PNH indices, Data dados, Ant ant, double temp_cost) {
 
 		// Assign node to hub for this product
 		ant.x[indices.prod][indices.node] = indices.hub;
@@ -146,7 +146,7 @@ public class Actions {
 	// =====================================================================
 	// 6. Open a hub (pay fixed opening cost g[j])
 	// =====================================================================
-	public static double openHub(Ind indices, Data dados, Ant ant, double temp_cost) {
+	public static double openHub(PNH indices, Data dados, Ant ant, double temp_cost) {
 
 		if (ant.z[indices.hub] < 1) {
 			ant.z[indices.hub] = 1;
@@ -170,7 +170,7 @@ public class Actions {
 	// =====================================================================
 	// 7. Dedicate a hub to a product (self-allocation + pay f[j][p])
 	// =====================================================================
-	public static double dedicateHub(Ind indices, Data dados, Ant ant, Aco a, int k, double temp_cost) {
+	public static double dedicateHub(PNH indices, Data dados, Ant ant, Aco a, int k, double temp_cost) {
 
 		if (indices.node != indices.hub &&
 				ant.x[indices.hub][indices.prod] != indices.hub &&

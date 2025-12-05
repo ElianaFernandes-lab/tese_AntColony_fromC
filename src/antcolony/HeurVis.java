@@ -14,10 +14,15 @@ public class HeurVis {
     public double[][] hubFixedCost;    // Hub Fixed Cost (f[i][p] + g[i])
     public double[][][] eta;  // Heuristic visibility η[i][j][p]
 
-    public HeurVis(int nbNodes, int nbProducts) {
+    public HeurVis(Data data, PreProc preProc) {
+    	int nbProducts = data.nbProducts;
+    	int nbNodes = data.nbNodes;
+    	
         this.tfc = new double[nbNodes][nbProducts];
         this.hubFixedCost = new double[nbNodes][nbProducts];
         this.eta = new double[nbNodes][nbNodes][nbProducts];
+        
+        this.compute(data, preProc);
     }
     
     public void compute(Data dados, PreProc pre_p) {

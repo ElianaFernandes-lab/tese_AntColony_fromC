@@ -21,7 +21,7 @@ public class Roulette {
      *
      * @return selected assignment (node i → hub j for product p)
      */
-    public static Ind run(
+    public static PNH run(
             int antLife,
             Data dados,
             Aco a_param,
@@ -29,7 +29,7 @@ public class Roulette {
             PreProc pre_p,
             HeurVis hvis) {
 
-        Ind indices = new Ind();
+        PNH indices = new PNH();
         double beta = AcoVar.BETA;
 
         // Reset probabilities
@@ -121,10 +121,7 @@ public class Roulette {
                         log("SELECTED: prob[" + i + "][" + j + "][" + p + "] = " +
                             ants.prob[i][j][p] + " >= " + r);
 
-                        indices.prod = p;
-                        indices.node = i;
-                        indices.hub = j;
-                        return indices;
+                        return new PNH(p, i, j);
                     }
                 }
             }
@@ -136,10 +133,7 @@ public class Roulette {
             for (int i = 0; i < dados.nbNodes; i++) {
                 for (int j = 0; j < dados.nbNodes; j++) {
                     if (ants.prob[i][j][p] >= 0) {
-                        indices.prod = p;
-                        indices.node = i;
-                        indices.hub = j;
-                        return indices;
+                        return new PNH(p, i, j);
                     }
                 }
             }
