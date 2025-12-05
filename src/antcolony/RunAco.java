@@ -229,7 +229,7 @@ public class RunAco {
 						Actions.updateAvailableCapacities(index.prod, index.hub, index.node, dat, ants[k], k);/// only if the hub is not
 
 						/// not necessary but left here just in case
-						if(ants[k].avail_cap[index.hub][index.prod]<0){
+						if(ants[k].avail_cap[index.prod][index.hub]<0){
 							System.err.println("ERROR");
 						}
 
