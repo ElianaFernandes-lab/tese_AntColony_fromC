@@ -3,6 +3,7 @@ package antcolony;
 import antcolony.GetSolutions.Solution;
 import antcolony.GetSolutions.SolutionX;
 import antcolony.ReadData.Data;
+import antcolony.ortools.HiGHSLR;
 import ilog.concert.IloException;
 
 public class RunAco {
@@ -67,11 +68,12 @@ public class RunAco {
 		if (AcoVar.SCAL_LR) {
 			System.out.println("COMPUTING CPLEX LR");
 			try {
-				a = CplexLRRunner.run(tLR, scalParam, dat, a);
-			} catch (IloException e) {
+				a = HiGHSLR.run(tLR, scalParam, dat, a);
+			} catch (Exception e) {
+				System.err.println("Error while running HiGHS LR:");
 				e.printStackTrace();
 			}  // You need to implement this
-			System.out.println("FINISHED COMPUTING CPLEX LR");
+			System.out.println("FINISHED COMPUTING HiGHS LR");
 		}
 
 		if (!AcoVar.REP) {
@@ -405,7 +407,7 @@ public class RunAco {
 			it++;
 			if(it >= AcoVar.NR_ITER)
 				it_stop=1;
-			
+
 		} while(it_stop<1);
 		// ALL ITER TIME
 		// get best iteration 
@@ -452,12 +454,12 @@ public class RunAco {
 		}
 
 	}
-	
+
 	private static void GetBestCost(Data dat, Iteration itrt, Best better, int it, double globalBest, long t1) {
-	     if (itrt.best_cost < better.cost) {
-	         better.cost = itrt.best_cost;
-	         better.nr_iter = it;
-	         better.time = (System.currentTimeMillis() - t1) / 1000.0;
-	     }
-	 }
+		if (itrt.best_cost < better.cost) {
+			better.cost = itrt.best_cost;
+			better.nr_iter = it;
+			better.time = (System.currentTimeMillis() - t1) / 1000.0;
+		}
+	}
 }
