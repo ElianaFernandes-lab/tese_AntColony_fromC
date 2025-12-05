@@ -24,7 +24,7 @@ public class RunAco {
 		int i,j,p,k,l,it; // counters
 		int best_count=0; //count the number of best solutions for stopping criterion
 		int nr_dead=0; //count the number of dead ants
-		int it_stop=0;
+		int it_stop = 0;
 		int sum_available; // sum of available solution components to be added (used to check end of solution construction or infeasibility)
 		int sum_remaining;
 
@@ -95,7 +95,10 @@ public class RunAco {
 		// ===================================================================
 		// 4. Preprocessing
 		// ===================================================================
-		pre = AcoVar.USE_PRE ? PreProc.compute(dat) : PreProc.allowAll(dat.nbProducts, dat.nbNodes);
+		pre = new PreProc(dat.nbProducts, dat.nbNodes);
+		if(AcoVar.USE_PRE) {
+			pre.compute(dat);
+		}
 
 		///////// ///////// ///////// //////     HEURISTIC VISIBILITY        ///////// ///////// ///////// /////////
 		HeurVis hv = new HeurVis(dat.nbNodes, dat.nbProducts);
@@ -122,51 +125,48 @@ public class RunAco {
 
 			// reset ant values
 			// ALIVE ANTS ARE THE ONES THAT PRODUCE FEASIBLE SOLUTIONS (ant_k.life=1)
-			for(k=0;k<AcoVar.NR_ANTS;k++){
+			for(k = 0 ;k<AcoVar.NR_ANTS;k++){
 				ants[k] = new Ant(dat.nbProducts, dat.nbNodes);
+				ants[k].initialize(pre, dat.nbProducts, dat.nbNodes, dat.gamma);
 				ants[k].life=1;
 				ants[k].cost=0.0; // the cost of ant solution is intialized to zero
 			}
 
-			// SOLUTION COMPONENTS (x(i,j,p) ----->  initialized to -1 because it can take value 0)
-			for(k=0;k<AcoVar.NR_ANTS;k++)
-				for(p=0;p<dat.nbProducts;p++)
-					for(i = 0;i<dat.nbNodes;i++)
-						ants[k].x[i][p]=-1;
+			
 
 			// SOLUTION BEST COMPONENTS (x(i,j,iter) ----->  initialized to -1 because it can take value 0)
-			for(p=0;p<dat.nbProducts;p++)
+			for(p = 0;p < dat.nbProducts;p++)
 				for(i = 0;i<dat.nbNodes;i++)
-					itrt.x_best[i][p]=-1;
+					itrt.x_best[p][i]=-1;
 			//z_values
 			for(j=0;j<dat.nbNodes;j++){
 				itrt.z_best[j]=0;
 			}
 
 			// OPENED HUBS (z(j) ----->  initialized to 0)
-			for(k=0;k<AcoVar.NR_ANTS;k++)
+			for(k = 0 ;k<AcoVar.NR_ANTS;k++)
 				for(j=0;j<dat.nbNodes;j++)
 					ants[k].z[j]=0;
 
 			// AVAILABLE CAPACITY AT EACH POTENTIAL HUB NODE j FOR PRODUCT p and EACH SOLUTION COMPONENT OF ANT k
 			// (avail_cap(j,p,k) ---> initialized to capacity of each node)
-			for(k=0;k<AcoVar.NR_ANTS;k++)
-				for(p=0;p<dat.nbProducts;p++)
+			for(k = 0 ;k<AcoVar.NR_ANTS;k++)
+				for(p = 0;p < dat.nbProducts;p++)
 					for(j=0;j<dat.nbNodes;j++)
 						ants[k].avail_cap[j][p]=dat.gamma[j][p];
 
 			// compute pre-processing results
 			// AVAILABLE SOLUTIONS (x(i,j,p) ----->  initialized to 1 or 0, depending on pre-processing)
-			for(k=0;k<AcoVar.NR_ANTS;k++)
-				for(p=0;p<dat.nbProducts;p++)
+			for(k = 0 ;k<AcoVar.NR_ANTS;k++)
+				for(p = 0;p < dat.nbProducts;p++)
 					for(i = 0;i<dat.nbNodes;i++)
 						for(j=0;j<dat.nbNodes;j++)
 							ants[k].avail_tau[i][j][p]=pre.allow[i][j][p];
-			//for(k=0;k<AcoVar.NR_ANTS;k++) È igual para todas nesta fase
+			//for(k = 0 ;k<AcoVar.NR_ANTS;k++) È igual para todas nesta fase
 			// count nr of available solutions ant total number of silutions
 			int tot_sol=0;
 			int av_sol=0;
-			for(p=0;p<dat.nbProducts;p++)
+			for(p = 0;p < dat.nbProducts;p++)
 				for(i = 0;i<dat.nbNodes;i++)
 					for(j=0;j<dat.nbNodes;j++){
 						if(ants[0].avail_tau[i][j][p]>0){
@@ -180,7 +180,7 @@ public class RunAco {
 			///////// ///////// ///////// //////              COLONY LOOP               ///////// ///////// ///////// /////////
 			// TIME
 			// ALL ANTS
-			for(k=0;k<AcoVar.NR_ANTS;k++){
+			for(k = 0 ;k<AcoVar.NR_ANTS;k++){
 				// TIME
 				// EACH ANT
 				temp_cost=0.0;
@@ -243,7 +243,7 @@ public class RunAco {
 
 						///////// /////////   COMPUTE NUMBER OF AVAILABLE SOLUTIONS   ///// /////////
 						sum_available=0;
-						for(p=0;p<dat.nbProducts;p++)
+						for(p = 0;p < dat.nbProducts;p++)
 							for(i = 0;i<dat.nbNodes;i++)
 								for(j=0;j<dat.nbNodes;j++)
 									sum_available=sum_available+ants[k].avail_tau[i][j][p];
@@ -254,7 +254,7 @@ public class RunAco {
 					}
 					///////// /////////   COMPUTE NUMBER OF REMAINING SOLUTIONS  !!! (para evitar bugs)   ///// /////////
 					sum_remaining=0;
-					for(p=0;p<dat.nbProducts;p++)
+					for(p = 0;p < dat.nbProducts;p++)
 						for(i = 0;i<dat.nbNodes;i++)
 							if(ants[k].x[i][p]==-1)
 								sum_remaining++;
@@ -266,7 +266,7 @@ public class RunAco {
 						// start next solution with one of the remaining connections
 						//connect hub to itself
 						int found=0;
-						for(p=0;p<dat.nbProducts;p++){
+						for(p = 0;p < dat.nbProducts;p++){
 							for(i = 0;i<dat.nbNodes;i++){
 								if(ants[k].x[i][p]==-1 && dat.O[i][p]<dat.gamma[i][p] && pre.allow[i][j][p]>0){
 									ants[k].prod=p;
@@ -290,12 +290,12 @@ public class RunAco {
 				/// BEST ANT COST
 				if(ants[k].life>0)
 					Actions.getBestAntCost(dat.nbProducts,dat.nbNodes, ants[k], itrt, it,k);
-			}//for(k=0;k<AcoVar.NR_ANTS;k++)
+			}//for(k = 0 ;k<AcoVar.NR_ANTS;k++)
 			///////// ///////// ///////// //////            END COLONY LOOP               ///////// ///////// ///////// /////////
 			// used for writting simplicity
 			int kk=itrt.best_ant; // k is being used in colony's loops, can't be used here
 			if(itrt.best_cost==max_cost)
-				kk=0;
+				kk = 0 ;
 
 			if(ants[kk].life>0){
 
@@ -332,14 +332,14 @@ public class RunAco {
 				sl = GetSolutions.getxSolution(dat, itrt);
 				double inter_cost=0.0;
 				double estimate_d=0.0;
-				for (p=0; p<dat.nbProducts; p++)
+				for (p = 0; p < dat.nbProducts; p++)
 					for (i = 0; i<dat.nbNodes; i++)
 						for (j=0; j<dat.nbNodes; j++)
 							if(sl.inter_x[i][j][p]>0){
 								estimate_d=estimate_d+sl.inter_x[i][j][p]*dat.d[i][j];
 							}
 
-				for(p=0;p<dat.nbProducts;p++)
+				for(p = 0;p < dat.nbProducts;p++)
 					for(i = 0;i<dat.nbNodes;i++)
 						for(j=0;j<dat.nbNodes;j++)
 							if(sl.inter_x[i][j][p]>0){
@@ -353,8 +353,8 @@ public class RunAco {
 				// save y value TIRAR
 				for (i = 0; i<dat.nbNodes; i++) 
 					for (j=0; j<dat.nbNodes; j++) 
-						for (k=0; k<dat.nbNodes; k++) 
-							for(p=0; p<dat.nbProducts; p++){ 
+						for (k = 0 ; k < dat.nbNodes; k++) 
+							for(p = 0; p < dat.nbProducts; p++){ 
 								itrt.y_best[i][j][k][p]=sol.y[i][j][k][p];
 								if(itrt.best_cost<=better.cost)
 									better.y[i][j][k][p]=sol.y[i][j][k][p];
@@ -428,8 +428,8 @@ public class RunAco {
 			// save y value
 			for (i = 0; i<dat.nbNodes; i++) 
 				for (j=0; j<dat.nbNodes; j++) 
-					for (k=0; k<dat.nbNodes; k++) 
-						for(p=0; p<dat.nbProducts; p++)
+					for (k = 0 ; k < dat.nbNodes; k++) 
+						for(p = 0; p < dat.nbProducts; p++)
 							better.y[i][j][k][p]=sol.y[i][j][k][p];
 
 

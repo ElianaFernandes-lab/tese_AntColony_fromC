@@ -41,7 +41,7 @@ public class Ant {
 				this.avail_cap[i][p] = gamma[i][p];
 
 				for(int j = 0; j < nNodes; i++) {
-					this.avail_tau[i][j][p] = pre.allow[i][j][p];
+					this.avail_tau[p][i][j] = pre.allow[p][i][j];
 				}
 			}
 		}

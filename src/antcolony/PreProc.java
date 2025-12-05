@@ -1,5 +1,8 @@
 package antcolony;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
 
@@ -10,23 +13,33 @@ import antcolony.constants.AcoVar;
 
 public class PreProc {
 
+	private static final Logger log = LogManager.getLogger(PreProc.class);
+
 	public int[][][] allow; 
-	
-	
+
 
 	public PreProc(int nbProds, int nbNodes) {
-		this.allow = new int[nbNodes][nbNodes][nbProds];
+		this.allow = new int[nbProds][nbNodes][nbNodes];
+
+		this.init(nbProds, nbNodes);
+	}
+
+	private void init(int nbProds, int nbNodes) {
+		for (int i = 0; i < nbNodes; i++) {
+			for (int j = 0; j < nbNodes; j++) {
+				for (int p = 0; p < nbProds; p++) {
+					this.allow[p][i][j] = 1;
+				}
+			}
+		}
 	}
 
 	/**
 	 * Computes preprocessing rules to forbid bad assignments
 	 */
-	public static PreProc compute(Data dados) {
+	public void compute(Data dados) {
 		int nbNodes = dados.nbNodes;
 		int nbProds = dados.nbProducts;
-
-		// Initialize all assignments as allowed
-		PreProc preProcessor = allowAll(nbProds, nbNodes);
 
 		// ===============================================================
 		// 1. Capacity-based elimination (from EK 1999, constraint 13)
@@ -37,7 +50,7 @@ public class PreProc {
 					if (i != j) {
 						double remainingCap = dados.gamma[j][p] - dados.O[j][p];
 						if (dados.O[i][p] > remainingCap + 1e-9) {
-							preProcessor.allow[i][j][p] = 0;
+							this.allow[i][j][p] = 0;
 						}
 					}
 				}
@@ -48,7 +61,7 @@ public class PreProc {
 		// 2. Fixed cost dominance rule (optional, controlled by flag)
 		// ===============================================================
 		if (AcoVar.USE_FIXED_COST_PRE) {
-			log("FIXED COST PREPROCESSING USED");
+			log.info("FIXED COST PREPROCESSING USED");
 
 			for (int p = 0; p < nbProds; p++) {
 				for (int i = 0; i < nbNodes; i++) {
@@ -64,7 +77,7 @@ public class PreProc {
 
 						// If routing via j is more expensive than opening self-hub i
 						if (dados.O[i][p] < dados.gamma[i][p] && flowCost > selfHubCost + 1e-9) {
-							preProcessor.allow[i][j][p] = 0;
+							this.allow[i][j][p] = 0;
 						}
 					}
 				}
@@ -76,42 +89,13 @@ public class PreProc {
 		// ===============================================================
 		for (int p = 0; p < nbProds; p++) {
 			for (int j = 0; j < nbNodes; j++) {
-				if (preProcessor.allow[j][j][p] == 0) {  // j cannot be dedicated hub for p
+				if (this.allow[j][j][p] == 0) {  // j cannot be dedicated hub for p
 					for (int i = 0; i < nbNodes; i++) {
 						if (i != j) {
-							preProcessor.allow[i][j][p] = 0;
+							this.allow[i][j][p] = 0;
 						}
 					}
 				}
-			}
-		}
-
-		return preProcessor;
-	}
-
-	public static PreProc allowAll(int nbProds, int nbNodes) {
-		PreProc pre_p = new PreProc(nbProds, nbNodes);
-		for (int i = 0; i < nbNodes; i++) {
-			for (int j = 0; j < nbNodes; j++) {
-				for (int p = 0; p < nbProds; p++) {
-					pre_p.allow[i][j][p] = 1;
-				}
-			}
-		}
-
-		return pre_p;
-	}
-
-	// ===================================================================
-	// Logging (optional)
-	// ===================================================================
-	private static void log(String msg) {
-		if (AcoVar.HISTORY) {
-			try (var writer = new java.io.PrintWriter(
-					new java.io.FileWriter("history1.txt", true))) {
-				writer.println(msg);
-			} catch (Exception e) {
-				System.err.println("Failed to write preprocessing log: " + e.getMessage());
 			}
 		}
 	}
