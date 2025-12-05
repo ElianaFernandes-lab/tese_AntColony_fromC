@@ -161,7 +161,7 @@ public class RunAco {
 				for(p = 0;p < dat.nbProducts;p++)
 					for(i = 0;i<dat.nbNodes;i++)
 						for(j=0;j<dat.nbNodes;j++)
-							ants[k].avail_tau[i][j][p]=pre.allow[i][j][p];
+							ants[k].avail_tau[p][i][j]=pre.allow[p][i][j];
 			//for(k = 0 ;k<AcoVar.NR_ANTS;k++) È igual para todas nesta fase
 			// count nr of available solutions ant total number of silutions
 			int tot_sol=0;
@@ -169,7 +169,7 @@ public class RunAco {
 			for(p = 0;p < dat.nbProducts;p++)
 				for(i = 0;i<dat.nbNodes;i++)
 					for(j=0;j<dat.nbNodes;j++){
-						if(ants[0].avail_tau[i][j][p]>0){
+						if(ants[0].avail_tau[p][i][j]>0){
 							av_sol++;
 						}
 						tot_sol++;
@@ -246,7 +246,7 @@ public class RunAco {
 						for(p = 0;p < dat.nbProducts;p++)
 							for(i = 0;i<dat.nbNodes;i++)
 								for(j=0;j<dat.nbNodes;j++)
-									sum_available=sum_available+ants[k].avail_tau[i][j][p];
+									sum_available=sum_available+ants[k].avail_tau[p][i][j];
 
 					} else {//if(ants[k].life>0)
 						ants[k].cost=max_cost;
@@ -256,7 +256,7 @@ public class RunAco {
 					sum_remaining=0;
 					for(p = 0;p < dat.nbProducts;p++)
 						for(i = 0;i<dat.nbNodes;i++)
-							if(ants[k].x[i][p]==-1)
+							if(ants[k].x[p][i]==-1)
 								sum_remaining++;
 
 					if(sum_available==0 && sum_remaining>0){
@@ -268,7 +268,7 @@ public class RunAco {
 						int found=0;
 						for(p = 0;p < dat.nbProducts;p++){
 							for(i = 0;i<dat.nbNodes;i++){
-								if(ants[k].x[i][p]==-1 && dat.O[i][p]<dat.gamma[i][p] && pre.allow[i][j][p]>0){
+								if(ants[k].x[p][i]==-1 && dat.O[i][p]<dat.gamma[i][p] && pre.allow[i][j][p]>0){
 									ants[k].prod=p;
 									ants[k].hub=i;
 									ants[k].node=i;

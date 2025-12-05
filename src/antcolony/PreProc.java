@@ -19,7 +19,7 @@ public class PreProc {
 
 
 	public PreProc(int nbProds, int nbNodes) {
-		this.allow = new int[nbProds][nbNodes][nbNodes];
+		this.allow = new int[nbProds][nbNodes][nbNodes]; // [p][i][j] order
 
 		this.init(nbProds, nbNodes);
 	}
@@ -50,7 +50,7 @@ public class PreProc {
 					if (i != j) {
 						double remainingCap = dados.gamma[j][p] - dados.O[j][p];
 						if (dados.O[i][p] > remainingCap + 1e-9) {
-							this.allow[i][j][p] = 0;
+							this.allow[p][i][j] = 0;
 						}
 					}
 				}
@@ -77,7 +77,7 @@ public class PreProc {
 
 						// If routing via j is more expensive than opening self-hub i
 						if (dados.O[i][p] < dados.gamma[i][p] && flowCost > selfHubCost + 1e-9) {
-							this.allow[i][j][p] = 0;
+							this.allow[p][i][j] = 0;
 						}
 					}
 				}
@@ -89,10 +89,10 @@ public class PreProc {
 		// ===============================================================
 		for (int p = 0; p < nbProds; p++) {
 			for (int j = 0; j < nbNodes; j++) {
-				if (this.allow[j][j][p] == 0) {  // j cannot be dedicated hub for p
+				if (this.allow[p][j][j] == 0) {  // j cannot be dedicated hub for p
 					for (int i = 0; i < nbNodes; i++) {
 						if (i != j) {
-							this.allow[i][j][p] = 0;
+							this.allow[p][i][j] = 0;
 						}
 					}
 				}

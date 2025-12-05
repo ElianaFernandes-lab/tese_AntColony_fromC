@@ -27,7 +27,7 @@ public class Actions {
 		logHistory("ants.x[" + indices.node + "][" + indices.prod + "] = " + indices.hub);
 
 		// Remove this component from available choices
-		ant.avail_tau[indices.node][indices.hub][indices.prod] = 0;
+		ant.avail_tau[indices.prod][indices.node][indices.hub] = 0;
 
 		// Update transfer + collection cost
 		logHistory("update transfer and collection costs from:");
@@ -87,8 +87,8 @@ public class Actions {
 		// Rule 1: a node can be allocated to only one hub per product
 		if (is_node > 0) {
 			for (int j = 0; j < nr_nodes; j++) {
-				if (ant.avail_tau[node][j][prod] > 0) {
-					ant.avail_tau[node][j][prod] = 0;
+				if (ant.avail_tau[prod] [node][j]> 0) {
+					ant.avail_tau[prod][node][j] = 0;
 					logHistory("ants.avail_tau[" + node + "][" + j + "][" + prod + "] = 0");
 				}
 			}
@@ -121,8 +121,8 @@ public class Actions {
 			for (int p = 0; p < dados.nbProducts; p++) {
 				if (ant.x[hub][p] != hub) {  // not already a hub for product p
 					for (int i = 0; i < dados.nbNodes; i++) {
-						if (ant.avail_tau[i][hub][p] > 0) {
-							ant.avail_tau[i][hub][p] = 0;
+						if (ant.avail_tau[p][i][hub] > 0) {
+							ant.avail_tau[p][i][hub] = 0;
 							logHistory("ants.avail_tau[" + i + "][" + hub + "][" + p + "] = 0");
 						}
 					}
@@ -174,7 +174,7 @@ public class Actions {
 
 		if (indices.node != indices.hub &&
 				ant.x[indices.hub][indices.prod] != indices.hub &&
-				ant.avail_tau[indices.hub][indices.hub][indices.prod] > 0) {
+				ant.avail_tau[indices.prod][indices.hub][indices.hub]> 0) {
 
 			int prod = indices.prod;
 			int hub = indices.hub;

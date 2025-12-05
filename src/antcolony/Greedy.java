@@ -32,7 +32,7 @@ public class Greedy {
 
 					// Feasibility Check:
 					if (a_param.tau[i][j][p] >= largest &&
-							ant.avail_tau[i][j][p] > 0 &&
+							ant.avail_tau[p][i][j]> 0 &&
 							ant.avail_cap[j][p] > dados.O[i][p]) {
 
 						largest = a_param.tau[i][j][p];
@@ -54,7 +54,7 @@ public class Greedy {
 			for (p = 0; p < dados.nbProducts; p++) {
 				for (i = 0; i < dados.nbNodes; i++) {
 					for (j = 0; j < dados.nbNodes; j++) {
-						if (ant.avail_tau[i][j][p] > 0) {
+						if (ant.avail_tau[p][i][j] > 0) {
 							ant.prod = p;
 							ant.node = i;
 							ant.hub = j;

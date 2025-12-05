@@ -22,7 +22,7 @@ public class Ant {
 	public int[][] x;                // x[p][i] = hub to which node i is assigned for product p
 
 	public Ant(int nProducts, int nNodes) {
-		this.avail_tau = new int[nNodes][nNodes][nProducts];
+		this.avail_tau = new int[nProducts][nNodes][nNodes];
 		this.avail_cap = new double[nNodes][nProducts];
 		this.prob = new double[nNodes][nNodes][nProducts];
 
@@ -34,13 +34,13 @@ public class Ant {
 		this.life = 1;
 		this.cost = 0.0;
 
-		for(int i = 0 ;i < nNodes; i++) {
+		for(int i = 0; i < nNodes; i++) {
 			this.z[i] = 0;
 			for(int p = 0; p < nProducts; p++) {
-				this.x[i][p]=-1;
+				this.x[p][i]=-1;
 				this.avail_cap[i][p] = gamma[i][p];
 
-				for(int j = 0; j < nNodes; i++) {
+				for(int j = 0; j < nNodes; j++) {
 					this.avail_tau[p][i][j] = pre.allow[p][i][j];
 				}
 			}
