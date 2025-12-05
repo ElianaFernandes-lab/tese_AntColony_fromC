@@ -10,7 +10,6 @@ import java.util.Scanner;
 
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
-import antcolony.tempfiles.RunAco;
 
 public class Main {
 

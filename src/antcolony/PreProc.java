@@ -11,6 +11,12 @@ import antcolony.constants.AcoVar;
 public class PreProc {
 
 	public int[][][] allow; 
+	
+	
+
+	public PreProc(int nbProds, int nbNodes) {
+		this.allow = new int[nbNodes][nbNodes][nbProds];
+	}
 
 	/**
 	 * Computes preprocessing rules to forbid bad assignments
@@ -20,7 +26,7 @@ public class PreProc {
 		int nbProds = dados.nbProducts;
 
 		// Initialize all assignments as allowed
-		PreProc preProcessor = allowAll(nbNodes, nbProds);
+		PreProc preProcessor = allowAll(nbProds, nbNodes);
 
 		// ===============================================================
 		// 1. Capacity-based elimination (from EK 1999, constraint 13)
@@ -83,8 +89,8 @@ public class PreProc {
 		return preProcessor;
 	}
 
-	public static PreProc allowAll(int nbNodes, int nbProds) {
-		PreProc pre_p = new PreProc();
+	public static PreProc allowAll(int nbProds, int nbNodes) {
+		PreProc pre_p = new PreProc(nbProds, nbNodes);
 		for (int i = 0; i < nbNodes; i++) {
 			for (int j = 0; j < nbNodes; j++) {
 				for (int p = 0; p < nbProds; p++) {

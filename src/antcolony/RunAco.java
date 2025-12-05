@@ -95,7 +95,7 @@ public class RunAco {
 		// ===================================================================
 		// 4. Preprocessing
 		// ===================================================================
-		pre = AcoVar.USE_PRE ? PreProc.compute(dat) : PreProc.allowAll(dat.nbNodes, dat.nbProducts);
+		pre = AcoVar.USE_PRE ? PreProc.compute(dat) : PreProc.allowAll(dat.nbProducts, dat.nbNodes);
 
 		///////// ///////// ///////// //////     HEURISTIC VISIBILITY        ///////// ///////// ///////// /////////
 		HeurVis hv = new HeurVis(dat.nbNodes, dat.nbProducts);
@@ -123,6 +123,7 @@ public class RunAco {
 			// reset ant values
 			// ALIVE ANTS ARE THE ONES THAT PRODUCE FEASIBLE SOLUTIONS (ant_k.life=1)
 			for(k=0;k<AcoVar.NR_ANTS;k++){
+				ants[k] = new Ant(dat.nbProducts, dat.nbNodes);
 				ants[k].life=1;
 				ants[k].cost=0.0; // the cost of ant solution is intialized to zero
 			}

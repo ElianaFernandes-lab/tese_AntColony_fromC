@@ -21,7 +21,7 @@ public class Ant {
 	public int[] z;                  // z[j] = 1 if hub j is open
 	public int[][] x;                // x[p][i] = hub to which node i is assigned for product p
 
-	public Ant(int nNodes, int nProducts) {
+	public Ant(int nProducts, int nNodes) {
 		this.avail_tau = new int[nNodes][nNodes][nProducts];
 		this.avail_cap = new double[nNodes][nProducts];
 		this.prob = new double[nNodes][nNodes][nProducts];
