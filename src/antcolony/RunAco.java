@@ -4,7 +4,7 @@ import antcolony.GetSolutions.Solution;
 import antcolony.GetSolutions.SolutionX;
 import antcolony.ReadData.Data;
 import antcolony.ortools.HiGHSLR;
-import ilog.concert.IloException;
+import antcolony.ortools.HiGHSMILP;
 
 public class RunAco {
 
@@ -347,7 +347,7 @@ public class RunAco {
 				itrt.best_cost=itrt.best_cost+inter_cost;
 				sol = GetSolutions.getSolution(dat,ants[kk], itrt);
 
-				RunCplex.solve(dat, sol, itrt.best_cost, fichIn, fichOut);
+				HiGHSMILP.solve(dat, sol, itrt.best_cost, fichIn, fichOut);
 				// save y value TIRAR
 				for (i = 0; i<dat.nbNodes; i++) 
 					for (j=0; j<dat.nbNodes; j++) 
@@ -421,7 +421,7 @@ public class RunAco {
 		System.out.println("before cplex");
 
 		if(global_best<max_cost){
-			RunCplex.solve(dat, sol, better.cost, fichIn, fichOut);
+			HiGHSMILP.solve(dat, sol, better.cost, fichIn, fichOut);
 
 			// save y value
 			for (i = 0; i<dat.nbNodes; i++) 
