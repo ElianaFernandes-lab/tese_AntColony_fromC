@@ -29,14 +29,14 @@ public class ReadData {
         public double[][][] w;  // w[p][i][j] = flow from i to j for product p
         public double[][] d;    // d[i][j] = distance between i and j
         public double[] g;      // g[i] = fixed cost to open hub at i
-        public double[][] f;    // f[i][p] = fixed cost to dedicate hub i to product p
-        public double[][] gamma;// Gamma[i][p] = capacity of hub i for product p
+        public double[][] f;    // f[p][i] = fixed cost to dedicate hub i to product p
+        public double[][] gamma;// Gamma[p][i] = capacity of hub i for product p
         public int[] L;         // L[i] = max products hub i can handle
         public double[] chi;    // chi[p] = collection cost factor for p
         public double[] delta;  // delta[p] = distribution cost factor for p
         public double[] alpha;  // alpha[p] = inter-hub transfer cost factor for p
-        public double[][] O;    // O[i][p] = total outflow from i for p
-        public double[][] D;    // D[i][p] = total inflow to i for p
+        public double[][] originatedFlow;    // O[p][i] = total outflow from i for p
+        public double[][] destinedFlow;    // D[p][i] = total inflow to i for p
 
         public Data(int nbNodes, int nbProducts) {
             this.nbNodes = nbNodes;
@@ -45,14 +45,14 @@ public class ReadData {
             w = new double[nbProducts][nbNodes][nbNodes];
             d = new double[nbNodes][nbNodes];
             g = new double[nbNodes];
-            f = new double[nbNodes][nbProducts];
-            gamma = new double[nbNodes][nbProducts];
+            f = new double[nbProducts][nbNodes];
+            gamma = new double[nbProducts][nbNodes];
             L = new int[nbNodes];
             chi = new double[nbProducts];
             delta = new double[nbProducts];
             alpha = new double[nbProducts];
-            O = new double[nbNodes][nbProducts];
-            D = new double[nbNodes][nbProducts];
+            originatedFlow = new double[nbProducts][nbNodes];
+            destinedFlow = new double[nbProducts][nbNodes];
         }
     }
 
@@ -95,11 +95,11 @@ public class ReadData {
                 }
             }
 
-            // Read flows w[i][j][p]
+            // Read flows w[p][i][j]
             for (int i = 0; i < nbNodes; i++) {
                 for (int j = 0; j < nbNodes; j++) {
                     for (int p = 0; p < nbProducts; p++) {
-                        dados.w[i][j][p] = scanner.nextDouble();
+                        dados.w[p][i][j] = scanner.nextDouble();
                     }
                 }
             }
@@ -125,28 +125,28 @@ public class ReadData {
                 dados.L[i] = scanner.nextInt();
             }
 
-            // Read capacities Gamma[i][p]
+            // Read capacities gamma[p][j]
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
-                    dados.gamma[i][p] = scanner.nextDouble();
+                    dados.gamma[p][i] = scanner.nextDouble();
                     if (AcoVar.DAT_HIST) {
-                    	log.info("dados.Gamma[{}][{}]= " +i, p,  dados.gamma[i][p]);
+                    	log.info("dados.Gamma[{}][{}]= " +i, p,  dados.gamma[p][i]);
                     }
                 }
             }
 
-            // Read dedication costs f[i][p]
+            // Read dedication costs f[p][i]
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
-                    dados.f[i][p] = scanner.nextDouble();
+                    dados.f[p][i] = scanner.nextDouble();
                 }
             }
 
-            // Update g[i] as per paper: average 2 * sum f[i][p] / nbProducts
+            // Update g[i] as per paper: average 2 * sum f[p][i] / nbProducts
             for (int i = 0; i < nbNodes; i++) {
                 double sumF = 0.0;
                 for (int p = 0; p < nbProducts; p++) {
-                    sumF += dados.f[i][p];
+                    sumF += dados.f[p][i];
                 }
                 dados.g[i] = 2 * sumF / nbProducts;
             }
@@ -154,12 +154,12 @@ public class ReadData {
             // Compute total outflows O[i][p]
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
-                    dados.O[i][p] = 0.0;
+                    dados.originatedFlow[p][i] = 0.0;
                     for (int j = 0; j < nbNodes; j++) {
-                        dados.O[i][p] += dados.w[i][j][p];
+                        dados.originatedFlow[p][i] += dados.w[p][i][j];
                     }
                     if (AcoVar.DAT_HIST) {
-                    	log.info("dados.O[{}][{}]= " ,i,p, dados.O[i][p]);
+                    	log.info("dados.O[{}][{}]= " ,i,p, dados.originatedFlow[p][i]);
                     }
                     
                 }
@@ -168,9 +168,9 @@ public class ReadData {
             // Compute total inflows D[i][p]
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
-                    dados.D[i][p] = 0.0;
+                    dados.destinedFlow[p][i] = 0.0;
                     for (int j = 0; j < nbNodes; j++) {
-                        dados.D[i][p] += dados.w[j][i][p];
+                        dados.destinedFlow[p][i] += dados.w[p][j][i];
                     }
                 }
             }

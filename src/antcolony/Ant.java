@@ -11,8 +11,8 @@ public class Ant {
 	public int hub;
 
 	// Availability matrices (used during construction)
-	public int[][][] avail_tau;      // avail_tau[i][j][p]
-	public double[][] avail_cap;     // avail_cap[j][p]
+	public int[][][] avail_tau;      // avail_tau[p][i][j]
+	public double[][] avail_cap;     // avail_cap[p][j]
 
 	// Probabilities for roulette wheel (accumulated)
 	public double[][][] prob;        // prob[i][j][p]  (for this ant only, or shared?)
@@ -23,7 +23,7 @@ public class Ant {
 
 	public Ant(int nProducts, int nNodes) {
 		this.avail_tau = new int[nProducts][nNodes][nNodes];
-		this.avail_cap = new double[nNodes][nProducts];
+		this.avail_cap = new double[nProducts][nNodes];
 		this.prob = new double[nNodes][nNodes][nProducts];
 
 		this.z = new int[nNodes];
@@ -38,7 +38,7 @@ public class Ant {
 			this.z[i] = 0;
 			for(int p = 0; p < nProducts; p++) {
 				this.x[p][i]=-1;
-				this.avail_cap[i][p] = gamma[i][p];
+				this.avail_cap[p][i] = gamma[p][i];
 
 				for(int j = 0; j < nNodes; j++) {
 					this.avail_tau[p][i][j] = pre.allow[p][i][j];

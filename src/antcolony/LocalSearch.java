@@ -70,7 +70,7 @@ public class LocalSearch {
 
                     if (new_hub != hub &&
                         iter.z_best[new_hub] == 1 &&
-                        ants.avail_cap[new_hub][prod] >= dados.O[node][prod] &&
+                        ants.avail_cap[new_hub][prod] >= dados.originatedFlow[prod][node] &&
                         iter.x_best[prod][new_hub] == new_hub) {  // new_hub is a hub for prod
 
                         logLS("x_best[" + new_hub + "][" + prod + "]= " + new_hub + " is hub.");
@@ -90,10 +90,10 @@ public class LocalSearch {
 
             // Compute cost difference
             double cost_plus = dados.d[node][new_hub] *
-                    (dados.chi[prod] * dados.O[node][prod] + dados.delta[prod] * dados.D[node][prod]);
+                    (dados.chi[prod] * dados.originatedFlow[prod][node] + dados.delta[prod] * dados.destinedFlow[prod][node]);
 
             double cost_subtract = dados.d[node][hub] *
-                    (dados.chi[prod] * dados.O[node][prod] + dados.delta[prod] * dados.D[node][prod]);
+                    (dados.chi[prod] * dados.originatedFlow[prod][node] + dados.delta[prod] * dados.destinedFlow[prod][node]);
 
             double delta = cost_plus - cost_subtract;
 
@@ -105,8 +105,8 @@ public class LocalSearch {
                 logLS("Reassignment done to hub " + new_hub);
 
                 // Update capacities
-                ants.avail_cap[hub][prod] += dados.O[node][prod];
-                ants.avail_cap[new_hub][prod] -= dados.O[node][prod];
+                ants.avail_cap[prod][hub] += dados.originatedFlow[prod][node];
+                ants.avail_cap[new_hub][prod] -= dados.originatedFlow[prod][node];
 
                 first_admissible = 2;
                 ls_iter++;

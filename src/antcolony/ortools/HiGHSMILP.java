@@ -15,7 +15,6 @@ import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
 
 import antcolony.GetSolutions;
-import antcolony.RunAco;
 import antcolony.GetSolutions.Solution;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
@@ -71,7 +70,7 @@ public class HiGHSMILP {
 
 			// ==============================
 			// 1. Flow divergence constraints
-			// outflow - inflow = O[i][p] * x[[p]i][k] - sum_j w[i][j][p] * x[p][j][k]
+			// outflow - inflow = O[i][p] * x[[p]i][k] - sum_j w[p][i][j] * x[p][j][k]
 			// ==============================
 			for (int p = 0; p < nbProds; p++) {
 				for (int i = 0; i < nbNodes; i++) {
@@ -84,7 +83,7 @@ public class HiGHSMILP {
 								c.setCoefficient(y[p][i][l][j], -1.0); // inflow
 							}
 						}
-						double rhs = dados.O[i][p] * sol.x[p][i][j] - sumW(dados, sol, i, j, p, nbNodes);
+						double rhs = dados.originatedFlow[p][i] * sol.x[p][i][j] - sumW(dados, sol, i, j, p, nbNodes);
 						c.setBounds(-rhs, -rhs);
 					}
 				}
@@ -98,7 +97,7 @@ public class HiGHSMILP {
 				for (int j = 0; j < nbNodes; j++)
 					for (int p = 0; p < nbProds; p++) {
 						MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY,
-								dados.O[i][p] * sol.x[i][j][p],
+								dados.originatedFlow[p][i] * sol.x[i][j][p],
 								"FlowBound_" + p + "_" + j + "_" + i);
 						for (int l = 0; l < nbNodes; l++)
 							if (l != j) c.setCoefficient(y[p][i][j][l], 1.0);
@@ -116,14 +115,14 @@ public class HiGHSMILP {
 			// Product dedication costs
 			for (int p = 0; p < nbProds; p++)
 				for (int j = 0; j < nbNodes; j++)
-					if (sol.x[p][j][j] == 1) obj.setCoefficient(x[p][j][j], dados.f[j][p]);
+					if (sol.x[p][j][j] == 1) obj.setCoefficient(x[p][j][j], dados.f[p][j]);
 
 			// Access costs
 			for (int p = 0; p < nbProds; p++)
 				for (int i = 0; i < nbNodes; i++)
 					for (int j = 0; j < nbNodes; j++)
 						if (sol.x[i][j][p] == 1)
-							obj.setCoefficient(x[p][i][j], dados.d[i][j] * (dados.chi[p] * dados.O[i][p] + dados.delta[p] * dados.D[i][p]));
+							obj.setCoefficient(x[p][i][j], dados.d[i][j] * (dados.chi[p] * dados.originatedFlow[p][i] + dados.delta[p] * dados.destinedFlow[p][i]));
 
 			// Inter-hub transfer costs
 			for (int p = 0; p < nbProds; p++)
@@ -189,7 +188,7 @@ public class HiGHSMILP {
 	private static double sumW(Data dados, Solution sol, int i, int k, int p, int n) {
 		double sum = 0.0;
 		for (int j = 0; j < n; j++)
-			sum += dados.w[i][j][p] * sol.x[p][j][k];
+			sum += dados.w[p][i][j] * sol.x[p][j][k];
 		return sum;
 	}
 

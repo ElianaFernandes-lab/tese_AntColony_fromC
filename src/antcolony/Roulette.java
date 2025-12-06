@@ -50,7 +50,7 @@ public class Roulette {
             for (int i = 0; i < dados.nbNodes; i++) {
                 for (int j = 0; j < dados.nbNodes; j++) {
                     if (ants.avail_tau[p][i][j] > 0 && 
-                        ants.avail_cap[j][p] >= dados.O[i][p] + 1e-9) {
+                        ants.avail_cap[p][j] >= dados.originatedFlow[p][i] + 1e-9) {
 
                         double tau = a_param.tau[p][i][j];
                         double eta = hvis.eta[i][j][p];
@@ -69,7 +69,7 @@ public class Roulette {
             for (int p = 0; p < dados.nbProducts; p++) {
                 for (int i = 0; i < dados.nbNodes; i++) {
                     for (int j = 0; j < dados.nbNodes; j++) {
-                        if (ants.avail_tau[i][j][p] > 0) {
+                        if (ants.avail_tau[p][i][j] > 0) {
                             ants.prod = p;
                             ants.node = i;
                             ants.hub = j;
@@ -90,7 +90,7 @@ public class Roulette {
             for (int i = 0; i < dados.nbNodes; i++) {
                 for (int j = 0; j < dados.nbNodes; j++) {
                     if (ants.avail_tau[p][i][j] > 0 && 
-                        ants.avail_cap[j][p] >= dados.O[i][p] + 1e-9) {
+                        ants.avail_cap[p][j] >= dados.originatedFlow[p][i] + 1e-9) {
 
                         double tau = a_param.tau[p][i][j];
                         double eta = hvis.eta[i][j][p];

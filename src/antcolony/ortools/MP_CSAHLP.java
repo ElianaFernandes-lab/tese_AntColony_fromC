@@ -252,7 +252,7 @@ public class MP_CSAHLP {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
-					double coeff = data.d[i][k] * (data.chi[p] * data.O[i][p] + data.delta[p] * data.D[i][p]);
+					double coeff = data.d[i][k] * (data.chi[p] * data.originatedFlow[p][i] + data.delta[p] * data.destinedFlow[p][i]);
 					obj.setCoefficient(this.x[p][i][k], coeff);
 					
 					// Second part: costs related to y variables
@@ -269,7 +269,7 @@ public class MP_CSAHLP {
 			
 			// Fourth part: product-specific hub costs
 			for (int p = 0; p < this.nbProducts; p++) {
-				obj.setCoefficient(this.x[p][k][k], data.f[k][p]);
+				obj.setCoefficient(this.x[p][k][k], data.f[p][k]);
 			}
 		}
 		
@@ -343,7 +343,7 @@ public class MP_CSAHLP {
 					}
 					
 					// Supply/demand terms
-					c.setCoefficient(this.x[p][i][k], -data.O[i][p]);
+					c.setCoefficient(this.x[p][i][k], -data.originatedFlow[p][i]);
 					
 					for (int j = 0; j < this.nbNodes; j++) {
 						c.setCoefficient(this.x[p][j][k], data.w[p][i][j]);
@@ -357,7 +357,7 @@ public class MP_CSAHLP {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
-					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, data.O[i][p], 
+					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, data.originatedFlow[p][i], 
 							"FBnd" + p + "i" + i + "j" + j);
 					
 					for (int l = 0; l < this.nbNodes; l++) {
@@ -366,7 +366,7 @@ public class MP_CSAHLP {
 						}
 					}
 					
-					c.setCoefficient(this.x[p][i][j], -data.O[i][p]);
+					c.setCoefficient(this.x[p][i][j], -data.originatedFlow[p][i]);
 				}
 			}
 		}
@@ -383,11 +383,11 @@ public class MP_CSAHLP {
 				
 				// Sum of allocated demand to hub k for product p
 				for (int i = 0; i < this.nbNodes; i++) {
-					c.setCoefficient(this.x[p][i][k], data.O[i][p]);
+					c.setCoefficient(this.x[p][i][k], data.originatedFlow[p][i]);
 				}
 				
 				// Hub capacity for product p
-				c.setCoefficient(this.x[p][k][k], -data.gamma[k][p]);
+				c.setCoefficient(this.x[p][k][k], -data.gamma[p][k]);
 			}
 		}
 	}
@@ -397,7 +397,7 @@ public class MP_CSAHLP {
 			// Calculate total demand for product p
 			double prodDemand = 0.0;
 			for (int i = 0; i < this.nbNodes; i++) {
-				prodDemand += data.O[i][p];
+				prodDemand += data.originatedFlow[p][i];
 			}
 
 			// Find minimum number of hubs needed to cover demand
@@ -415,8 +415,8 @@ public class MP_CSAHLP {
 				int bestIdx = -1;
 				
 				for (int idx : candidateHubs) {
-					if (data.gamma[idx][p] > bestGamma && data.O[idx][p] < data.gamma[idx][p]) {
-						bestGamma = data.gamma[idx][p];
+					if (data.gamma[p][idx] > bestGamma && data.originatedFlow[p][idx] < data.gamma[p][idx]) {
+						bestGamma = data.gamma[p][idx];
 						bestIdx = idx;
 					}
 				}

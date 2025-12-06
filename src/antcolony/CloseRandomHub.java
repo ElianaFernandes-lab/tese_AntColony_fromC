@@ -45,7 +45,7 @@ public class CloseRandomHub {
         }
         for (int j = 0; j < dados.nbNodes; j++) {
             for (int p = 0; p < dados.nbProducts; p++) {
-                temp_cap[j][p] = ants.avail_cap[j][p];
+                temp_cap[j][p] = ants.avail_cap[p][j];
             }
         }
 
@@ -78,10 +78,10 @@ public class CloseRandomHub {
 
         // Determine fixed cost savings
         if (nr.pprods[hub_to_close] == 1) {
-            hub_cost_to_save = dados.f[hub_to_close][prod] + dados.g[hub_to_close];
+            hub_cost_to_save = dados.f[prod][hub_to_close] + dados.g[hub_to_close];
             logCRH("This is the last product → full hub closure saves g[" + hub_to_close + "] + f");
         } else {
-            hub_cost_to_save = dados.f[hub_to_close][prod];
+            hub_cost_to_save = dados.f[prod][hub_to_close];
             logCRH("Only product-specific fixed cost f[" + hub_to_close + "][" + prod + "] saved");
         }
 
@@ -117,7 +117,7 @@ public class CloseRandomHub {
             double maxFlow = -1;
             int nodeToMove = -1;
             for (int node : nodesToRelocate) {
-                double flow = dados.O[node][prod];
+                double flow = dados.originatedFlow[prod][node];
                 if (flow > maxFlow) {
                     maxFlow = flow;
                     nodeToMove = node;
@@ -142,9 +142,9 @@ public class CloseRandomHub {
 
             // Compute cost change
             double oldDistCost = dados.d[nodeToMove][hub_to_close] *
-                    (dados.chi[prod] * dados.O[nodeToMove][prod] + dados.delta[prod] * dados.D[nodeToMove][prod]);
+                    (dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
             double newDistCost = dados.d[nodeToMove][bestHub] *
-                    (dados.chi[prod] * dados.O[nodeToMove][prod] + dados.delta[prod] * dados.D[nodeToMove][prod]);
+                    (dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
 
             double deltaCost = newDistCost - oldDistCost;
             temp_cost += deltaCost;
@@ -178,7 +178,7 @@ public class CloseRandomHub {
                 }
                 for (int j = 0; j < dados.nbNodes; j++) {
                     for (int p = 0; p < dados.nbProducts; p++) {
-                        ants.avail_cap[j][p] = temp_cap[j][p];
+                        ants.avail_cap[p][j] = temp_cap[j][p];
                     }
                 }
 

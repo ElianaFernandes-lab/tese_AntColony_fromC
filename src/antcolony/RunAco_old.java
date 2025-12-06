@@ -53,7 +53,7 @@ public class RunAco_old {
 //        if (!AcoVar.SCAL_LR) {
 //            for (p = 0; p < nbProducts; p++) {
 //                for (i = 0; i < nbNodes; i++) {
-//                    scalParam += dat.f[i][p] + dat.g[i];
+//                    scalParam += dat.f[p][i] + dat.g[i];
 //                }
 //            }
 //            System.out.println("\nscal_param = " + scalParam + "\n");
@@ -187,7 +187,7 @@ public class RunAco_old {
 //						UpdateAvailableCapacities(index.prod, index.hub, index.node, dat, ants[k], k);/// only if the hub is not
 //
 //						/// not necessary but left here just in case
-//						if(ants[k].avail_cap[index.hub][index.prod]<0){
+//						if(ants[k].avail_cap[index.prod][index.hub]<0){
 //							cout << "runaco capacity violation"<<endl;
 //							system ("pause");
 //						}
@@ -205,7 +205,7 @@ public class RunAco_old {
 //						for(p=0;p<dat.nbProducts;p++)
 //							for(i=0;i<dat.nbNodes;i++)
 //								for(j=0;j<dat.nbNodes;j++)
-//									sum_available=sum_available+ants[k].avail_tau[i][j][p];
+//									sum_available=sum_available+ants[k].avail_tau[p][i][j];
 //						
 //					}//if(ants[k].life>0)
 //					else{
@@ -227,7 +227,7 @@ public class RunAco_old {
 //						int found=0;
 //						for(p=0;p<dat.nbProducts;p++){
 //							for(i=0;i<dat.nbNodes;i++){
-//								if(ants[k].x[i][p]==-1 && dat.O[i][p]<dat.Gamma[i][p] && pre.allow[i][j][p]>0){
+//								if(ants[k].x[i][p]==-1 && dat.O[i][p]<dat.gamma[p][j] && pre.allow[p][i][j]>0){
 //									ants[k].prod=p;
 //									ants[k].hub=i;
 //									ants[k].node=i;

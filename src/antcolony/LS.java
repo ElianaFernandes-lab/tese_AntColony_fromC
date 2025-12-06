@@ -197,11 +197,11 @@ public class LS {
                             for (l = 0; l < dados.nbNodes; l++) {
                                 j = temp_list_phubs[l];
                                 if (j >= 0) {
-                                    if (ants.avail_cap[j][prod] < dados.O[node][prod]) {
+                                    if (ants.avail_cap[prod][j] < dados.originatedFlow[prod][node]) {
                                         temp_list_phubs[l] = -1;
-                                        if (AcoVar.LSSHIST) logToFile("cap(" + j + "," + prod + "): " + ants.avail_cap[j][prod] + "<" + dados.O[node][prod] + " dados.O[" + node + "][" + prod + "]");
+                                        if (AcoVar.LSSHIST) logToFile("cap(" + j + "," + prod + "): " + ants.avail_cap[prod][j] + "<" + dados.originatedFlow[prod][node] + " dados.O[" + node + "][" + prod + "]");
                                     } else if (AcoVar.LSSHIST) {
-                                        logToFile("cap(" + j + "," + prod + "): " + ants.avail_cap[j][prod] + ">=" + dados.O[node][prod] + " dados.O[" + node + "][" + prod + "]");
+                                        logToFile("cap(" + j + "," + prod + "): " + ants.avail_cap[prod][j] + ">=" + dados.originatedFlow[prod][node] + " dados.O[" + node + "][" + prod + "]");
                                     }
                                 }
                             }
@@ -267,24 +267,24 @@ public class LS {
                 if (flag_avail_node > 0 && flag_avail_hub > 0) {
                     if (AcoVar.LSSHIST) {
                         logToFile("to dedicated hub " + new_hub);
-                        logToFile("cap(" + new_hub + "," + prod + "): " + ants.avail_cap[new_hub][prod] + " >= " + dados.O[node][prod] + " : flux(" + node + ") ?");
+                        logToFile("cap(" + new_hub + "," + prod + "): " + ants.avail_cap[new_hub][prod] + " >= " + dados.originatedFlow[prod][node] + " : flux(" + node + ") ?");
                     }
                     
                     // Calculate cost difference for Relocate Node move
                     
                     // Cost to add (new connection)
-                    cost_plus = dados.d[node][new_hub] * (dados.chi[prod] * dados.O[node][prod] + dados.delta[prod] * dados.D[node][prod]);
+                    cost_plus = dados.d[node][new_hub] * (dados.chi[prod] * dados.originatedFlow[prod][node] + dados.delta[prod] * dados.destinedFlow[prod][node]);
                     if (AcoVar.LSSHIST) logToFile(" add cost: " + cost_plus);
                     
                     // Cost to subtract (old connection)
-                    cost_subtract = dados.d[node][hub] * (dados.chi[prod] * dados.O[node][prod] + dados.delta[prod] * dados.D[node][prod]);
+                    cost_subtract = dados.d[node][hub] * (dados.chi[prod] * dados.originatedFlow[prod][node] + dados.delta[prod] * dados.destinedFlow[prod][node]);
                     if (AcoVar.LSSHIST) {
                         logToFile(" remove cost: " + cost_subtract);
                         logToFile("cost diference: " + (cost_plus - cost_subtract));
                     }
                     
                     // Check for improvement and capacity feasibility (C++ has redundant capacity check)
-                    if (cost_plus - cost_subtract < 0 /* && ants.avail_cap[hub][prod] > dados.O[node][prod] */) {
+                    if (cost_plus - cost_subtract < 0 /* && ants.avail_cap[prod][hub] > dados.O[node][prod] */) {
                         
                         // Perform Relocation (Move is accepted)
                         iter.x_best[node][prod] = new_hub;
@@ -294,8 +294,8 @@ public class LS {
                         if (AcoVar.LSSHIST) logToFile("Reassignment done to hub " + new_hub);
                         
                         // Update capacities
-                        ants.avail_cap[hub][prod] = ants.avail_cap[hub][prod] + dados.O[node][prod];
-                        ants.avail_cap[new_hub][prod] = ants.avail_cap[new_hub][prod] - dados.O[node][prod];
+                        ants.avail_cap[prod][hub] = ants.avail_cap[prod][hub] + dados.originatedFlow[prod][node];
+                        ants.avail_cap[new_hub][prod] = ants.avail_cap[new_hub][prod] - dados.originatedFlow[prod][node];
                         
                         first_admissible = 2; // Stop after the first admissible (improving) move
                     } else {

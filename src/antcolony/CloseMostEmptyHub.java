@@ -79,9 +79,9 @@ public class CloseMostEmptyHub {
                 if (nr.pconnects[p][j] == 1) {
                     if (nr.connects[j] == 1) {
                         // This hub has only one product → closing frees g[j] too
-                        hub_cost[p][j] = dados.f[j][p] + dados.g[j];
+                        hub_cost[p][j] = dados.f[p][j] + dados.g[j];
                     } else {
-                        hub_cost[p][j] = dados.f[j][p];
+                        hub_cost[p][j] = dados.f[p][j];
                     }
                 }
             }
@@ -124,16 +124,16 @@ public class CloseMostEmptyHub {
         for (int l = 0; l < total_candidates; l++) {
             int j = temp_list_hubs[l];
             if (j >= 0) {
-                boolean hasCapacity = ants.avail_cap[j][prod] >= dados.O[hub][prod];
+                boolean hasCapacity = ants.avail_cap[prod][j] >= dados.originatedFlow[prod][hub];
                 boolean notFull = nr.pprods[j] < dados.L[j];
 
                 if (hasCapacity && notFull) {
                     temp_list_hubs[valid_hubs++] = j;
-                    log("Hub " + j + " accepted: cap=" + ants.avail_cap[j][prod] +
-                        " >= " + dados.O[hub][prod] + ", prods=" + nr.pprods[j] + " < L=" + dados.L[j]);
+                    log("Hub " + j + " accepted: cap=" + ants.avail_cap[prod][j] +
+                        " >= " + dados.originatedFlow[prod][hub] + ", prods=" + nr.pprods[j] + " < L=" + dados.L[j]);
                 } else {
-                    log("Hub " + j + " rejected: cap=" + ants.avail_cap[j][prod] +
-                        ", need=" + dados.O[hub][prod] + " | prods=" + nr.pprods[j] + " vs L=" + dados.L[j]);
+                    log("Hub " + j + " rejected: cap=" + ants.avail_cap[prod][j] +
+                        ", need=" + dados.originatedFlow[prod][hub] + " | prods=" + nr.pprods[j] + " vs L=" + dados.L[j]);
                     temp_list_hubs[l] = -1;
                 }
             }
@@ -154,7 +154,7 @@ public class CloseMostEmptyHub {
             int candidate = temp_list_hubs[l];
 
             double cost_plus = dados.d[hub][candidate] *
-                    (dados.chi[prod] * dados.O[hub][prod] + dados.delta[prod] * dados.D[hub][prod]);
+                    (dados.chi[prod] * dados.originatedFlow[prod][hub] + dados.delta[prod] * dados.destinedFlow[prod][hub]);
 
             double cost_subtract = hub_cost[prod][hub];
 
@@ -187,8 +187,8 @@ public class CloseMostEmptyHub {
             iter.best_cost += min_cost_difference;
 
             // Update capacities
-            ants.avail_cap[hub][prod] += dados.O[hub][prod];      // free up old hub
-            ants.avail_cap[new_hub][prod] -= dados.O[hub][prod];  // consume in new hub
+            ants.avail_cap[prod][hub] += dados.originatedFlow[prod][hub];      // free up old hub
+            ants.avail_cap[new_hub][prod] -= dados.originatedFlow[prod][hub];  // consume in new hub
 
             log("Reassignment complete. New best_cost = " + iter.best_cost);
             return 1; // success

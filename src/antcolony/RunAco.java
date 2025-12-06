@@ -50,7 +50,7 @@ public class RunAco {
 		if (!AcoVar.SCAL_LR) {
 			for (p = 0; p < nbProducts; p++) {
 				for (i = 0; i < nbNodes; i++) {
-					scalParam += dat.f[i][p] + dat.g[i];
+					scalParam += dat.f[p][i] + dat.g[i];
 				}
 			}
 			log.info("\nscal_param = {}\n", scalParam);
@@ -160,7 +160,7 @@ public class RunAco {
 			for(k = 0 ;k<AcoVar.NR_ANTS;k++)
 				for(p = 0;p < dat.nbProducts;p++)
 					for(j=0;j<dat.nbNodes;j++)
-						ants[k].avail_cap[j][p]=dat.gamma[j][p];
+						ants[k].avail_cap[p][j]=dat.gamma[p][j];
 
 			// compute pre-processing results
 			// AVAILABLE SOLUTIONS (x(i,j,p) ----->  initialized to 1 or 0, depending on pre-processing)
@@ -236,7 +236,7 @@ public class RunAco {
 						Actions.updateAvailableCapacities(index.prod, index.hub, index.node, dat, ants[k], k);/// only if the hub is not
 
 						/// not necessary but left here just in case
-						if(ants[k].avail_cap[index.hub][index.prod] < 0){
+						if(ants[k].avail_cap[index.prod][index.hub] < 0){
 							log.error("ERROR ON CAPACITY");
 						}
 
@@ -275,7 +275,7 @@ public class RunAco {
 						int found=0;
 						for(p = 0;p < dat.nbProducts;p++){
 							for(i = 0;i<dat.nbNodes;i++){
-								if(ants[k].x[p][i]==-1 && dat.O[i][p]<dat.gamma[i][p] && pre.allow[i][j][p]>0){
+								if(ants[k].x[p][i]==-1 && dat.originatedFlow[p][i]<dat.gamma[p][j] && pre.allow[p][i][j]>0){
 									ants[k].prod=p;
 									ants[k].hub=i;
 									ants[k].node=i;
@@ -350,7 +350,7 @@ public class RunAco {
 					for(i = 0;i<dat.nbNodes;i++)
 						for(j=0;j<dat.nbNodes;j++)
 							if(sl.inter_x[i][j][p]>0){
-								inter_cost+=dat.alpha[p]*dat.O[i][p]*sl.inter_x[i][j][p]*estimate_d/sl.count_inter;
+								inter_cost+=dat.alpha[p]*dat.originatedFlow[p][i]*sl.inter_x[i][j][p]*estimate_d/sl.count_inter;
 							}
 
 				itrt.best_cost=itrt.best_cost+inter_cost;

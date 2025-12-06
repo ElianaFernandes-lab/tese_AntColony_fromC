@@ -11,7 +11,7 @@ import antcolony.constants.AcoVar;
  */
 public class HeurVis {
     public double[][] totalFlowCost;    // Total Flow Cost if node i is the only hub for product p
-    public double[][] hubFixedCost;    // Hub Fixed Cost (f[i][p] + g[i])
+    public double[][] hubFixedCost;    // Hub Fixed Cost (f[p][i] + g[i])
     public double[][][] eta;  // Heuristic visibility η[i][j][p]
 
     public HeurVis(Data data, PreProc preProc) {
@@ -48,11 +48,11 @@ public class HeurVis {
         }
 
         // ===================================================================
-        // 2. Hub Fixed Cost (hfc[i][p]) = f[i][p] + g[i]
+        // 2. Hub Fixed Cost (hfc[i][p]) = f[p][i] + g[i]
         // ===================================================================
         for (int p = 0; p < nbProducts; p++) {
             for (int i = 0; i < nbNodes; i++) {
-                this.hubFixedCost[i][p] = dados.f[i][p] + dados.g[i];
+                this.hubFixedCost[i][p] = dados.f[p][i] + dados.g[i];
             }
         }
 

@@ -41,8 +41,8 @@ public class Actions {
 
 		temp_cost = ant.cost;
 		double collectionAndTransfer = dados.d[indices.node][indices.hub] *
-				(dados.chi[indices.prod] * dados.O[indices.node][indices.prod] +
-						dados.delta[indices.prod] * dados.D[indices.node][indices.prod]);
+				(dados.chi[indices.prod] * dados.originatedFlow[indices.prod][indices.node] +
+						dados.delta[indices.prod] * dados.destinedFlow[indices.prod][indices.node]);
 
 		ant.cost = temp_cost + collectionAndTransfer;
 		temp_cost = ant.cost;
@@ -58,7 +58,7 @@ public class Actions {
 			logHistory("temp_cost = " + temp_cost);
 
 			temp_cost = ant.cost;
-			ant.cost = temp_cost + dados.f[indices.hub][indices.prod];
+			ant.cost = temp_cost + dados.f[indices.prod][indices.hub];
 			temp_cost = ant.cost;
 
 			logHistory("update fixed costs to:");
@@ -77,7 +77,7 @@ public class Actions {
 		logTauHistory("tau local updated");
 		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + oldTau);
 
-		a.tau[prod][node][hub] = (1 - AcoVar.RHO) * oldTau + AcoVar.RHO * a.tau0[node][hub][prod];
+		a.tau[prod][node][hub] = (1 - AcoVar.RHO) * oldTau + AcoVar.RHO * a.tau0[prod][node][hub];
 
 		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + a.tau[prod][node][hub]);
 	}
@@ -141,10 +141,10 @@ public class Actions {
 	// 5. Update available hub capacity
 	// =====================================================================
 	public static int updateAvailableCapacities(int prod, int hub, int node, Data dados, Ant ant, int k) {
-		logHistory("CAPACITY UPDATE FROM " + ant.avail_cap[hub][prod]);
-		double oldCap = ant.avail_cap[hub][prod];
-		ant.avail_cap[hub][prod] = oldCap - dados.O[node][prod];
-		logHistory(" to " + ant.avail_cap[hub][prod]);
+		logHistory("CAPACITY UPDATE FROM " + ant.avail_cap[prod][hub]);
+		double oldCap = ant.avail_cap[prod][hub];
+		ant.avail_cap[prod][hub] = oldCap - dados.originatedFlow[prod][node];
+		logHistory(" to " + ant.avail_cap[prod][hub]);
 		return 0;
 	}
 
@@ -190,13 +190,13 @@ public class Actions {
 
 			// Fixed cost for dedicating hub to product
 			temp_cost = ant.cost;
-			ant.cost = temp_cost + dados.f[hub][prod];
+			ant.cost = temp_cost + dados.f[prod][hub];
 			temp_cost = ant.cost;
 
 			// Transfer/collection cost for self-loop (usually 0, but kept for generality)
 			temp_cost = ant.cost;
 			ant.cost = temp_cost + dados.d[hub][hub] *
-					(dados.chi[prod] * dados.O[hub][prod] + dados.delta[prod] * dados.D[hub][prod]);
+					(dados.chi[prod] * dados.originatedFlow[prod][hub] + dados.delta[prod] * dados.destinedFlow[prod][hub]);
 			temp_cost = ant.cost;
 
 			// Remove self-allocation from available
@@ -214,7 +214,7 @@ public class Actions {
 			// Update capacity
 			updateAvailableCapacities(prod, hub, hub, dados, ant, k);
 
-			if (ant.avail_cap[hub][prod] <= 0) {
+			if (ant.avail_cap[prod][hub] <= 0) {
 				System.out.println("actions capacity violation");
 				System.exit(1);
 			}

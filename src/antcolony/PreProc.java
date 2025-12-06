@@ -48,8 +48,8 @@ public class PreProc {
 			for (int j = 0; j < nbNodes; j++) {
 				for (int i = 0; i < nbNodes; i++) {
 					if (i != j) {
-						double remainingCap = dados.gamma[j][p] - dados.O[j][p];
-						if (dados.O[i][p] > remainingCap + 1e-9) {
+						double remainingCap = dados.gamma[p][j] - dados.originatedFlow[p][j];
+						if (dados.originatedFlow[p][i] > remainingCap + 1e-9) {
 							this.allow[p][i][j] = 0;
 						}
 					}
@@ -69,14 +69,14 @@ public class PreProc {
 						if (i == j) continue;
 
 						double flowCost = dados.d[i][j] *
-								(dados.chi[p] * dados.O[i][p] + dados.delta[p] * dados.D[i][p]);
+								(dados.chi[p] * dados.originatedFlow[p][i] + dados.delta[p] * dados.destinedFlow[p][i]);
 
-						double selfHubCost = dados.f[i][p] + dados.g[i] +
+						double selfHubCost = dados.f[p][i] + dados.g[i] +
 								dados.alpha[p] * dados.d[i][j] *
-								(dados.O[i][p] + dados.D[i][p] - 2 * dados.w[i][i][p]);
+								(dados.originatedFlow[p][i] + dados.destinedFlow[p][i] - 2 * dados.w[p][i][i]);
 
 						// If routing via j is more expensive than opening self-hub i
-						if (dados.O[i][p] < dados.gamma[i][p] && flowCost > selfHubCost + 1e-9) {
+						if (dados.originatedFlow[p][i] < dados.gamma[p][j] && flowCost > selfHubCost + 1e-9) {
 							this.allow[p][i][j] = 0;
 						}
 					}

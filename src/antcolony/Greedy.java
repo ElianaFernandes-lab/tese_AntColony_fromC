@@ -33,7 +33,7 @@ public class Greedy {
 					// Feasibility Check:
 					if (a_param.tau[p][i][j] >= largest &&
 							ant.avail_tau[p][i][j]> 0 &&
-							ant.avail_cap[j][p] > dados.O[i][p]) {
+							ant.avail_cap[p][j] > dados.originatedFlow[p][i]) {
 
 						largest = a_param.tau[p][i][j];
 						prod = p;
