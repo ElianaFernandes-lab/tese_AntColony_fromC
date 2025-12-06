@@ -28,16 +28,16 @@ public class Actions {
 		// Assign node to hub for this product
 		ant.x[indices.prod][indices.node] = indices.hub;
 
-		logHistory("Solution Component Added");
-		logHistory("ants.x[" + indices.node + "][" + indices.prod + "] = " + indices.hub);
+		log.error("Solution Component Added");
+		log.error("ants.x[" + indices.node + "][" + indices.prod + "] = " + indices.hub);
 
 		// Remove this component from available choices
 		ant.avail_tau[indices.prod][indices.node][indices.hub] = 0;
 
 		// Update transfer + collection cost
-		logHistory("update transfer and collection costs from:");
-		logHistory("ants.cost = " + ant.cost);
-		logHistory("temp_cost = " + temp_cost);
+		log.error("update transfer and collection costs from:");
+		log.error("ants.cost = " + ant.cost);
+		log.error("temp_cost = " + temp_cost);
 
 		temp_cost = ant.cost;
 		double collectionAndTransfer = dados.d[indices.node][indices.hub] *
@@ -47,23 +47,23 @@ public class Actions {
 		ant.cost = temp_cost + collectionAndTransfer;
 		temp_cost = ant.cost;
 
-		logHistory("update transfer and collection costs to:");
-		logHistory("ants.cost = " + ant.cost);
-		logHistory("temp_cost = " + temp_cost);
+		log.error("update transfer and collection costs to:");
+		log.error("ants.cost = " + ant.cost);
+		log.error("temp_cost = " + temp_cost);
 
 		// If the node is assigned to itself → it's a hub → add fixed cost per product
 		if (indices.node == indices.hub) {
-			logHistory("update fixed costs from:");
-			logHistory("ants.cost = " + ant.cost);
-			logHistory("temp_cost = " + temp_cost);
+			log.error("update fixed costs from:");
+			log.error("ants.cost = " + ant.cost);
+			log.error("temp_cost = " + temp_cost);
 
 			temp_cost = ant.cost;
 			ant.cost = temp_cost + dados.f[indices.prod][indices.hub];
 			temp_cost = ant.cost;
 
-			logHistory("update fixed costs to:");
-			logHistory("ants.cost = " + ant.cost);
-			logHistory("temp_cost = " + temp_cost);
+			log.error("update fixed costs to:");
+			log.error("ants.cost = " + ant.cost);
+			log.error("temp_cost = " + temp_cost);
 		}
 
 		return temp_cost;
@@ -74,12 +74,12 @@ public class Actions {
 	// =====================================================================
 	public static void localPheromoneUpdate(int prod, int hub, int node, Aco a) {
 		double oldTau = a.tau[prod][node][hub];
-		logTauHistory("tau local updated");
-		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + oldTau);
+		log.error("tau local updated");
+		log.error("a.tau[" + node + "][" + hub + "][" + prod + "] = " + oldTau);
 
 		a.tau[prod][node][hub] = (1 - AcoVar.RHO) * oldTau + AcoVar.RHO * a.tau0[prod][node][hub];
 
-		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + a.tau[prod][node][hub]);
+		log.error("a.tau[" + node + "][" + hub + "][" + prod + "] = " + a.tau[prod][node][hub]);
 	}
 
 	// =====================================================================
@@ -87,14 +87,14 @@ public class Actions {
 	// =====================================================================
 	public static int applySingleAllocationRules(int prod, int hub, int node, int nr_nodes,
 			Ant ant, int is_node, int is_not_hub) {
-		logHistory("SOLUTION COMPONENTS MADE UNAVAILABLE SA RULES");
+		log.error("SOLUTION COMPONENTS MADE UNAVAILABLE SA RULES");
 
 		// Rule 1: a node can be allocated to only one hub per product
 		if (is_node > 0) {
 			for (int j = 0; j < nr_nodes; j++) {
 				if (ant.avail_tau[prod] [node][j]> 0) {
 					ant.avail_tau[prod][node][j] = 0;
-					logHistory("ants.avail_tau[" + node + "][" + j + "][" + prod + "] = 0");
+					log.error("ants.avail_tau[" + node + "][" + j + "][" + prod + "] = 0");
 				}
 			}
 		}
@@ -104,7 +104,7 @@ public class Actions {
 			for (int i = 0; i < nr_nodes; i++) {
 				if (ant.avail_tau[prod][i][node] > 0) {
 					ant.avail_tau[prod][i][node] = 0;
-					logHistory("ants.avail_tau[" + i + "][" + node + "][" + prod + "] = 0");
+					log.error("ants.avail_tau[" + i + "][" + node + "][" + prod + "] = 0");
 				}
 			}
 		}
@@ -117,7 +117,7 @@ public class Actions {
 	public static int applyLkRules(int prod, int hub, Data dados, Ant ant) {
 		if (dados.L[prod] >= dados.nbProducts) return 0;  // No limit
 
-		logHistory("SOLUTION COMPONENTS MADE UNAVAILABLE Lk Rules");
+		log.error("SOLUTION COMPONENTS MADE UNAVAILABLE Lk Rules");
 
 		HubProductCount np = HubProductCount.checkProdConnects(dados.nbProducts, dados.nbNodes, ant);
 
@@ -128,7 +128,7 @@ public class Actions {
 					for (int i = 0; i < dados.nbNodes; i++) {
 						if (ant.avail_tau[p][i][hub] > 0) {
 							ant.avail_tau[p][i][hub] = 0;
-							logHistory("ants.avail_tau[" + i + "][" + hub + "][" + p + "] = 0");
+							log.error("ants.avail_tau[" + i + "][" + hub + "][" + p + "] = 0");
 						}
 					}
 				}
@@ -141,10 +141,10 @@ public class Actions {
 	// 5. Update available hub capacity
 	// =====================================================================
 	public static int updateAvailableCapacities(int prod, int hub, int node, Data dados, Ant ant, int k) {
-		logHistory("CAPACITY UPDATE FROM " + ant.avail_cap[prod][hub]);
+		log.error("CAPACITY UPDATE FROM " + ant.avail_cap[prod][hub]);
 		double oldCap = ant.avail_cap[prod][hub];
 		ant.avail_cap[prod][hub] = oldCap - dados.originatedFlow[prod][node];
-		logHistory(" to " + ant.avail_cap[prod][hub]);
+		log.error(" to " + ant.avail_cap[prod][hub]);
 		return 0;
 	}
 
@@ -155,18 +155,18 @@ public class Actions {
 
 		if (ant.z[indices.hub] < 1) {
 			ant.z[indices.hub] = 1;
-			logHistory("OPEN HUB: " + indices.hub);
-			logHistory("update fixed costs (open hub) from:");
-			logHistory("ants.cost = " + ant.cost);
-			logHistory("temp_cost = " + temp_cost);
+			log.error("OPEN HUB: " + indices.hub);
+			log.error("update fixed costs (open hub) from:");
+			log.error("ants.cost = " + ant.cost);
+			log.error("temp_cost = " + temp_cost);
 
 			temp_cost = ant.cost;
 			ant.cost = temp_cost + dados.g[indices.hub];
 			temp_cost = ant.cost;
 
-			logHistory(" to:");
-			logHistory("ants.cost = " + ant.cost);
-			logHistory("temp_cost = " + temp_cost);
+			log.error(" to:");
+			log.error("ants.cost = " + ant.cost);
+			log.error("temp_cost = " + temp_cost);
 		}
 		
 		return temp_cost;
@@ -185,8 +185,8 @@ public class Actions {
 			int hub = indices.hub;
 
 			ant.x[hub][prod] = hub;
-			logHistory("Solution Component Added (dedicate hub)");
-			logHistory("ants.x[" + hub + "][" + prod + "] = " + hub);
+			log.error("Solution Component Added (dedicate hub)");
+			log.error("ants.x[" + hub + "][" + prod + "] = " + hub);
 
 			// Fixed cost for dedicating hub to product
 			temp_cost = ant.cost;
@@ -298,39 +298,17 @@ public class Actions {
 			double scl_prm, double glbl_best) {
 		for (int p = 0; p < dados.nbProducts; p++) {
 			for (int j = 0; j < dados.nbNodes; j++) {
-				logTauHistory("tau Global updated (dead hub)");
-				logTauHistory("a.tau[" + j + "][" + j + "][" + p + "] = " + a.tau[j][j][p]);
+				log.error("tau Global updated (dead hub)");
+				log.error("a.tau[" + p + "][" + j + "][" + j + "] = " + a.tau[p][j][j]);
 
-				double oldTau = a.tau[j][j][p];
-				a.tau[j][j][p] = (1 - AcoVar.GAMMA) * oldTau +
+				double oldTau = a.tau[p][j][j];
+				a.tau[p][j][j] = (1 - AcoVar.GAMMA) * oldTau +
 						scl_prm * AcoVar.SCALING_PARAMETER * AcoVar.GAMMA * (1.0 / (glbl_best / 10000));
 
-				logTauHistory("a.tau[" + j + "][" + j + "][" + p + "] = " + a.tau[j][j][p]);
+				log.error("a.tau[" + p + "][" + j + "][" + j + "] = " + a.tau[p][j][j]);
 			}
 		}
 		return 0;
 	}
 
-	// =====================================================================
-	// Helper logging methods (only active if corresponding flags are true)
-	// =====================================================================
-	private static void logHistory(String msg) {
-		if (AcoVar.HISTORY || AcoVar.BAHIST || AcoVar.DAT_HIST) {
-			appendToFile("history1.txt", msg);
-		}
-	}
-
-	private static void logTauHistory(String msg) {
-		if (AcoVar.TAU_HIST) {
-			appendToFile("tau_hist.txt", msg);
-		}
-	}
-
-	private static void appendToFile(String filename, String text) {
-		try (PrintWriter out = new PrintWriter(new FileWriter(filename, true))) {
-			out.println(text);
-		} catch (IOException e) {
-			System.err.println("Error writing to log file: " + filename);
-		}
-	}
 }
