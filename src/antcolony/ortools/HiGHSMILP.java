@@ -5,6 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.ortools.Loader;
 import com.google.ortools.linearsolver.MPConstraint;
 import com.google.ortools.linearsolver.MPObjective;
@@ -12,69 +15,76 @@ import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
 
 import antcolony.GetSolutions;
+import antcolony.RunAco;
 import antcolony.GetSolutions.Solution;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
 
 public class HiGHSMILP {
 
+	private static final Logger log = LogManager.getLogger(HiGHSMILP.class);
+
+	private HiGHSMILP() {
+		// default constructor
+	}
+
 	public static void solve(Data dados, GetSolutions.Solution sol, double iter_cost,
 			String fichIn, String fichOut) {
 
 		Loader.loadNativeLibraries();
 
-		int n = dados.nbNodes;
-		int m = dados.nbProducts;
+		int nbNodes = dados.nbNodes;
+		int nbProds = dados.nbProducts;
 
 		long startTime = System.nanoTime();
 
 		try {
-			MPSolver solver = MPSolver.createSolver("HIGHS");
+			MPSolver solver = MPSolver.createSolver(AcoVar.SOLVER_ID);
 			if (solver == null) {
-				System.err.println("HiGHS solver unavailable.");
+				log.error("HiGHS solver unavailable.");
 				return;
 			}
 
 			// ==============================
-			// Binary variables: x[i][k][p] and z[k]
+			// Binary variables: x[p][i][j] and z[j]
 			// ==============================
-			MPVariable[][][] x = new MPVariable[n][n][m];
-			for (int i = 0; i < n; i++)
-				for (int k = 0; k < n; k++)
-					for (int p = 0; p < m; p++)
-						x[i][k][p] = solver.makeIntVar(0, 1, "x_" + i + "_" + k + "_" + p);
+			MPVariable[][][] x = new MPVariable[nbProds][nbNodes][nbNodes];
+			for (int i = 0; i < nbNodes; i++)
+				for (int j = 0; j < nbNodes; j++)
+					for (int p = 0; p < nbProds; p++)
+						x[p][i][j] = solver.makeIntVar(0, 1, "x_" + p + "_" + i + "_" + j);
 
-			MPVariable[] z = new MPVariable[n];
-			for (int k = 0; k < n; k++)
-				z[k] = solver.makeIntVar(0, 1, "z_" + k);
+			MPVariable[] z = new MPVariable[nbNodes];
+			for (int j = 0; j < nbNodes; j++)
+				z[j] = solver.makeIntVar(0, 1, "z_" + j);
 
 			// ==============================
-			// Continuous variables: y[i][k][l][p]
+			// Continuous variables: y[p][i][k][l]
 			// ==============================
-			MPVariable[][][][] y = new MPVariable[n][n][n][m];
-			for (int i = 0; i < n; i++)
-				for (int k = 0; k < n; k++)
-					for (int l = 0; l < n; l++)
-						for (int p = 0; p < m; p++)
-							y[i][k][l][p] = solver.makeNumVar(0.0, Double.POSITIVE_INFINITY,
-									"y_" + i + "_" + k + "_" + l + "_" + p);
+			MPVariable[][][][] y = new MPVariable[nbProds][nbNodes][nbNodes][nbNodes];
+			for (int i = 0; i < nbNodes; i++)
+				for (int k = 0; k < nbNodes; k++)
+					for (int l = 0; l < nbNodes; l++)
+						for (int p = 0; p < nbProds; p++)
+							y[p][i][k][l] = solver.makeNumVar(0.0, Double.POSITIVE_INFINITY,
+									"y_" + p + "_" + i + "_" + k + "_" + l);
 
 			// ==============================
 			// 1. Flow divergence constraints
-			// outflow - inflow = O[i][p] * x[i][k][p] - sum_j w[i][j][p] * x[j][k][p]
+			// outflow - inflow = O[i][p] * x[[p]i][k] - sum_j w[i][j][p] * x[p][j][k]
 			// ==============================
-			for (int p = 0; p < m; p++) {
-				for (int i = 0; i < n; i++) {
-					for (int k = 0; k < n; k++) {
+			for (int p = 0; p < nbProds; p++) {
+				for (int i = 0; i < nbNodes; i++) {
+					for (int j = 0; j < nbNodes; j++) {
 						MPConstraint c = solver.makeConstraint(0.0, 0.0,
-								"FlowBalance_" + i + "_" + k + "_" + p);
-						for (int l = 0; l < n; l++) {
-							if (l != k) {
-								c.setCoefficient(y[i][k][l][p], 1.0);  // outflow
-								c.setCoefficient(y[i][l][k][p], -1.0); // inflow
+								"FlowBalance_" + p + "_" + i + "_" + j);
+						for (int l = 0; l < nbNodes; l++) {
+							if (l != j) {
+								c.setCoefficient(y[p][i][j][l], 1.0);  // outflow
+								c.setCoefficient(y[p][i][l][j], -1.0); // inflow
 							}
 						}
-						double rhs = dados.O[i][p] * sol.x[i][k][p] - sumW(dados, sol, i, k, p, n);
+						double rhs = dados.O[i][p] * sol.x[p][i][j] - sumW(dados, sol, i, j, p, nbNodes);
 						c.setBounds(-rhs, -rhs);
 					}
 				}
@@ -84,14 +94,14 @@ public class HiGHSMILP {
 			// 2. Flow bounds
 			// sum_{l≠k} y[i][k][l][p] <= O[i][p] * x[i][k][p]
 			// ==============================
-			for (int i = 0; i < n; i++)
-				for (int k = 0; k < n; k++)
-					for (int p = 0; p < m; p++) {
+			for (int i = 0; i < nbNodes; i++)
+				for (int j = 0; j < nbNodes; j++)
+					for (int p = 0; p < nbProds; p++) {
 						MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY,
-								dados.O[i][p] * sol.x[i][k][p],
-								"FlowBound_" + i + "_" + k + "_" + p);
-						for (int l = 0; l < n; l++)
-							if (l != k) c.setCoefficient(y[i][k][l][p], 1.0);
+								dados.O[i][p] * sol.x[i][j][p],
+								"FlowBound_" + p + "_" + j + "_" + i);
+						for (int l = 0; l < nbNodes; l++)
+							if (l != j) c.setCoefficient(y[p][i][j][l], 1.0);
 					}
 
 			// ==============================
@@ -100,29 +110,32 @@ public class HiGHSMILP {
 			MPObjective obj = solver.objective();
 
 			// Fixed hub opening costs
-			for (int k = 0; k < n; k++)
-				if (sol.z[k] == 1) obj.setCoefficient(z[k], dados.g[k]);
+			for (int j = 0; j < nbNodes; j++)
+				if (sol.z[j] == 1) obj.setCoefficient(z[j], dados.g[j]);
 
 			// Product dedication costs
-			for (int p = 0; p < m; p++)
-				for (int k = 0; k < n; k++)
-					if (sol.x[k][k][p] == 1) obj.setCoefficient(x[k][k][p], dados.f[k][p]);
+			for (int p = 0; p < nbProds; p++)
+				for (int j = 0; j < nbNodes; j++)
+					if (sol.x[p][j][j] == 1) obj.setCoefficient(x[p][j][j], dados.f[j][p]);
 
 			// Access costs
-			for (int p = 0; p < m; p++)
-				for (int i = 0; i < n; i++)
-					for (int k = 0; k < n; k++)
-						if (sol.x[i][k][p] == 1)
-							obj.setCoefficient(x[i][k][p], dados.d[i][k] * (dados.chi[p] * dados.O[i][p] + dados.delta[p] * dados.D[i][p]));
+			for (int p = 0; p < nbProds; p++)
+				for (int i = 0; i < nbNodes; i++)
+					for (int j = 0; j < nbNodes; j++)
+						if (sol.x[i][j][p] == 1)
+							obj.setCoefficient(x[p][i][j], dados.d[i][j] * (dados.chi[p] * dados.O[i][p] + dados.delta[p] * dados.D[i][p]));
 
 			// Inter-hub transfer costs
-			for (int p = 0; p < m; p++)
-				for (int i = 0; i < n; i++)
-					for (int k = 0; k < n; k++)
-						for (int l = 0; l < n; l++)
-							if (k != l) obj.setCoefficient(y[i][k][l][p], dados.alpha[p] * dados.d[k][l]);
+			for (int p = 0; p < nbProds; p++)
+				for (int i = 0; i < nbNodes; i++)
+					for (int k = 0; k < nbNodes; k++)
+						for (int l = 0; l < nbNodes; l++)
+							if (k != l) obj.setCoefficient(y[p][i][k][l], dados.alpha[p] * dados.d[k][l]);
 
 			obj.setMinimization();
+			
+			// Set time limit (in mili seconds)
+	        solver.setTimeLimit(AcoVar.MILP_MAX_TIME_MILLIS);
 
 			// ==============================
 			// Solve
@@ -137,10 +150,10 @@ public class HiGHSMILP {
 			// Extract y values
 			// ==============================
 			if (status == MPSolver.ResultStatus.OPTIMAL || status == MPSolver.ResultStatus.FEASIBLE) {
-				for (int i = 0; i < n; i++)
-					for (int k = 0; k < n; k++)
-						for (int l = 0; l < n; l++)
-							for (int p = 0; p < m; p++)
+				for (int i = 0; i < nbNodes; i++)
+					for (int k = 0; k < nbNodes; k++)
+						for (int l = 0; l < nbNodes; l++)
+							for (int p = 0; p < nbProds; p++)
 								if (k != l) {
 									double val = y[i][k][l][p].solutionValue();
 									if (val > 1e-6) sol.y[i][k][l][p] = val;
@@ -150,17 +163,20 @@ public class HiGHSMILP {
 				iter_cost = vOpt;
 
 				int nz = 0;
-				for (int k = 0; k < n; k++) if (sol.z[k] == 1) nz++;
+				for (int k = 0; k < nbNodes; k++) if (sol.z[k] == 1) nz++;
 				appendToFile(fichOut, String.format("%12d  ", nz));
+			} else {
+				log.error("STATUS {}", status);
+				return;
 			}
 
 			// Logging
 			if (AcoVar.LOGG) {
-				try (PrintWriter log = new PrintWriter(new FileWriter("output_highs.log", true))) {
-					log.println(fichIn);
-					log.println("MODEL - ACO + HiGHS PEK");
-					log.printf("Optimal value : %.2f%n", vOpt);
-					log.printf("CPU           : %.2f seconds%n%n", tOpt);
+				try (PrintWriter pw = new PrintWriter(new FileWriter("output_highs.log", true))) {
+					pw.println(fichIn);
+					pw.println("MODEL - ACO + HiGHS PEK");
+					pw.printf("Optimal value : %.2f%n", vOpt);
+					pw.printf("CPU           : %.2f seconds%n%n", tOpt);
 				}
 			}
 
@@ -173,7 +189,7 @@ public class HiGHSMILP {
 	private static double sumW(Data dados, Solution sol, int i, int k, int p, int n) {
 		double sum = 0.0;
 		for (int j = 0; j < n; j++)
-			sum += dados.w[i][j][p] * sol.x[j][k][p];
+			sum += dados.w[i][j][p] * sol.x[p][j][k];
 		return sum;
 	}
 
@@ -181,7 +197,7 @@ public class HiGHSMILP {
 		try (PrintWriter out = new PrintWriter(new FileWriter(file, true))) {
 			out.println(text);
 		} catch (IOException e) {
-			System.err.println("Failed to write to " + file);
+			log.error("Failed to write to {}", file);
 		}
 	}
 }

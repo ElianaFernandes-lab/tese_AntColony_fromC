@@ -10,10 +10,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
 
 public class Actions {
+	
+	private static final Logger log = LogManager.getLogger(Main.class);
 
 	// =====================================================================
 	// 1. Add a solution component (x_node^prod = hub)
@@ -68,13 +73,13 @@ public class Actions {
 	// 2. Local pheromone update (after adding a component)
 	// =====================================================================
 	public static void localPheromoneUpdate(int prod, int hub, int node, Aco a) {
-		double oldTau = a.tau[node][hub][prod];
+		double oldTau = a.tau[prod][node][hub];
 		logTauHistory("tau local updated");
 		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + oldTau);
 
-		a.tau[node][hub][prod] = (1 - AcoVar.RHO) * oldTau + AcoVar.RHO * a.tau0[node][hub][prod];
+		a.tau[prod][node][hub] = (1 - AcoVar.RHO) * oldTau + AcoVar.RHO * a.tau0[node][hub][prod];
 
-		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + a.tau[node][hub][prod]);
+		logTauHistory("a.tau[" + node + "][" + hub + "][" + prod + "] = " + a.tau[prod][node][hub]);
 	}
 
 	// =====================================================================

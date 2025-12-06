@@ -31,11 +31,11 @@ public class Greedy {
 				for (j = 0; j < dados.nbNodes; j++) {
 
 					// Feasibility Check:
-					if (a_param.tau[i][j][p] >= largest &&
+					if (a_param.tau[p][i][j] >= largest &&
 							ant.avail_tau[p][i][j]> 0 &&
 							ant.avail_cap[j][p] > dados.O[i][p]) {
 
-						largest = a_param.tau[i][j][p];
+						largest = a_param.tau[p][i][j];
 						prod = p;
 						node = i;
 						hub = j;

@@ -75,6 +75,10 @@ public class AcoVar {
 	public static final String INPUT_PATH = "/Users/elianafernandes/Documents/Eclipse_projs/tese2025/tese_AntColony_fromC/src/inputfiles/";
 	// Used for selection in the pseudo-random proportional rule
 	public static final double Q0 = 0.1;
+	
+	//MILP time limit (mili seconds)
+	public static final int MILP_MAX_TIME_MILLIS = 6 * 60 * 60 * 1000; // (6 hours as in thesis)
+	public static final String SOLVER_ID = "HIGHS_MIXED_INTEGER_PROGRAMMING"; 
 
 	// Random number generator (thread-safe if you use ThreadLocalRandom or synchronize)
 	private static final Random rnd = new Random();

@@ -51,7 +51,7 @@ public class LS {
             for (p = 0; p < dados.nbProducts; p++)
                 for (i = 0; i < dados.nbNodes; i++)
                     for (j = 0; j < dados.nbNodes; j++) // Note: The C++ condition is tricky, assuming x_best[i][p] holds the hub index j
-                        if (iter.x_best[i][p] == j) {
+                        if (iter.x_best[p][i] == j) {
                             sb.append("x[" + i + "][" + j + "][" + p + "]\n");
                         }
             logToFile(sb.toString());
@@ -179,7 +179,7 @@ public class LS {
                             flag_avail_node = 1;
 
                             // Get the current assigned hub
-                            hub = iter.x_best[node][prod];
+                            hub = iter.x_best[prod][node];
                             if (AcoVar.LSSHIST) logToFile("x_best[" + node + "][" + prod + "]= " + hub + " will be reassigned.");
 
                             // Prepare temporary hub list (temp_list_phubs) excluding the current hub
@@ -334,7 +334,7 @@ public class LS {
             for (p = 0; p < dados.nbProducts; p++)
                 for (i = 0; i < dados.nbNodes; i++)
                     for (j = 0; j < dados.nbNodes; j++)
-                        if (iter.x_best[i][p] == j) {
+                        if (iter.x_best[p][i] == j) {
                             sb.append("x[" + i + "][" + j + "][" + p + "]\n");
                         }
             logToFile(sb.toString());

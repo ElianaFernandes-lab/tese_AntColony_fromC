@@ -40,7 +40,7 @@ public class CloseRandomHub {
         // Deep copy current best solution
         for (int p = 0; p < dados.nbProducts; p++) {
             for (int i = 0; i < dados.nbNodes; i++) {
-                x_temp[i][p] = iter.x_best[p][i];
+                x_temp[p][i]= iter.x_best[p][i];
             }
         }
         for (int j = 0; j < dados.nbNodes; j++) {

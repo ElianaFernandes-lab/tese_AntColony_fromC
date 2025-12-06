@@ -52,7 +52,7 @@ public class Roulette {
                     if (ants.avail_tau[p][i][j] > 0 && 
                         ants.avail_cap[j][p] >= dados.O[i][p] + 1e-9) {
 
-                        double tau = a_param.tau[i][j][p];
+                        double tau = a_param.tau[p][i][j];
                         double eta = hvis.eta[i][j][p];
                         sum_tau_eta += tau * Math.pow(eta, beta);
                     }
@@ -92,7 +92,7 @@ public class Roulette {
                     if (ants.avail_tau[p][i][j] > 0 && 
                         ants.avail_cap[j][p] >= dados.O[i][p] + 1e-9) {
 
-                        double tau = a_param.tau[i][j][p];
+                        double tau = a_param.tau[p][i][j];
                         double eta = hvis.eta[i][j][p];
                         double prob = tau * Math.pow(eta, beta) / sum_tau_eta;
 

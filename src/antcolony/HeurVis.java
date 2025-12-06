@@ -10,7 +10,7 @@ import antcolony.constants.AcoVar;
  * Copyright (c) 2015 Eliana Fernandes. All rights reserved.
  */
 public class HeurVis {
-    public double[][] tfc;    // Total Flow Cost if node i is the only hub for product p
+    public double[][] totalFlowCost;    // Total Flow Cost if node i is the only hub for product p
     public double[][] hubFixedCost;    // Hub Fixed Cost (f[i][p] + g[i])
     public double[][][] eta;  // Heuristic visibility η[i][j][p]
 
@@ -18,7 +18,7 @@ public class HeurVis {
     	int nbProducts = data.nbProducts;
     	int nbNodes = data.nbNodes;
     	
-        this.tfc = new double[nbNodes][nbProducts];
+        this.totalFlowCost = new double[nbNodes][nbProducts];
         this.hubFixedCost = new double[nbNodes][nbProducts];
         this.eta = new double[nbNodes][nbNodes][nbProducts];
         
@@ -37,13 +37,13 @@ public class HeurVis {
                 double sum = 0.0;
                 for (int j = 0; j < nbNodes; j++) {
                     for (int l = 0; l < nbNodes; l++) {
-                        double flow = dados.w[j][l][p];
+                        double flow = dados.w[p][j][l];
                         double collect = dados.chi[p] * dados.d[j][i];
                         double distrib = dados.delta[p] * dados.d[i][l];
                         sum += flow * (collect + distrib);
                     }
                 }
-                this.tfc[i][p] = sum;
+                this.totalFlowCost[i][p] = sum;
             }
         }
 
@@ -73,7 +73,7 @@ public class HeurVis {
         double aux1_eta = 0.0;
         for (int p = 0; p < nbProducts; p++) {
             for (int i = 0; i < nbNodes; i++) {
-                aux1_eta += this.tfc[i][p] * this.hubFixedCost[i][p];
+                aux1_eta += this.totalFlowCost[i][p] * this.hubFixedCost[i][p];
             }
         }
         aux1_eta *= 10.0;  // same as original
@@ -86,8 +86,8 @@ public class HeurVis {
 
             for (int p = 0; p < nbProducts; p++) {
                 for (int i = 0; i < nbNodes; i++) {
-                    if (this.tfc[i][p] > 1e-9 && this.hubFixedCost[i][p] > 1e-9) {
-                        double value = pre_p.allow[p][i][i] * aux1_eta / (this.tfc[i][p] * this.hubFixedCost[i][p]);
+                    if (this.totalFlowCost[i][p] > 1e-9 && this.hubFixedCost[i][p] > 1e-9) {
+                        double value = pre_p.allow[p][i][i] * aux1_eta / (this.totalFlowCost[i][p] * this.hubFixedCost[i][p]);
                         this.eta[i][i][p] = Math.max(value, 1e-9);  // avoid zero
                     } else {
                         this.eta[i][i][p] = 1e-9;

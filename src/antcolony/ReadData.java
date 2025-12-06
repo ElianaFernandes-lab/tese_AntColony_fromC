@@ -26,7 +26,7 @@ public class ReadData {
     	
         public int nbNodes = 0;
         public int nbProducts = 0;
-        public double[][][] w;  // w[i][j][p] = flow from i to j for product p
+        public double[][][] w;  // w[p][i][j] = flow from i to j for product p
         public double[][] d;    // d[i][j] = distance between i and j
         public double[] g;      // g[i] = fixed cost to open hub at i
         public double[][] f;    // f[i][p] = fixed cost to dedicate hub i to product p
@@ -38,21 +38,21 @@ public class ReadData {
         public double[][] O;    // O[i][p] = total outflow from i for p
         public double[][] D;    // D[i][p] = total inflow to i for p
 
-        public Data(int nodes, int products) {
-            this.nbNodes = nodes;
-            this.nbProducts = products;
+        public Data(int nbNodes, int nbProducts) {
+            this.nbNodes = nbNodes;
+            this.nbProducts = nbProducts;
 
-            w = new double[nodes][nodes][products];
-            d = new double[nodes][nodes];
-            g = new double[nodes];
-            f = new double[nodes][products];
-            gamma = new double[nodes][products];
-            L = new int[nodes];
-            chi = new double[products];
-            delta = new double[products];
-            alpha = new double[products];
-            O = new double[nodes][products];
-            D = new double[nodes][products];
+            w = new double[nbProducts][nbNodes][nbNodes];
+            d = new double[nbNodes][nbNodes];
+            g = new double[nbNodes];
+            f = new double[nbNodes][nbProducts];
+            gamma = new double[nbNodes][nbProducts];
+            L = new int[nbNodes];
+            chi = new double[nbProducts];
+            delta = new double[nbProducts];
+            alpha = new double[nbProducts];
+            O = new double[nbNodes][nbProducts];
+            D = new double[nbNodes][nbProducts];
         }
     }
 

@@ -12,9 +12,11 @@ public class Aco {
     // CURRENT PHEROMONE TRAIL: tau[i][j][p]
     public double[][][] tau;
 
-    public Aco(int nNodes, int nHubs, int nProducts) {
-        tau0 = new double[nNodes][nHubs][nProducts];
-        tau  = new double[nNodes][nHubs][nProducts];
+    public Aco(int nProducts, int nNodes) {
+        this.tau0 = new double[nProducts][nNodes][nNodes];
+        this.tau  = new double[nProducts][nNodes][nNodes];
+        
+        this.initPheromones();
     }
     
     

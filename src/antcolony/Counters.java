@@ -41,7 +41,7 @@ public class Counters {
         // Count dedicated hubs per product: a node j is a dedicated hub for product p if x_best[j][p] == j
         for (int p = 0; p < nr_products; p++) {
             for (int j = 0; j < nr_nodes; j++) {
-                if (iter.x_best[j][p] == j) {
+                if (iter.x_best[p][j] == j) {
                     nr.phubs[p]++;
                 }
             }
@@ -73,7 +73,7 @@ public class Counters {
         nr.pprods = new int[nr_nodes];
         for (int j = 0; j < nr_nodes; j++) {
             for (int p = 0; p < nr_products; p++) {
-                if (iter.x_best[j][p] == j) {
+                if (iter.x_best[p][j] == j) {
                     nr.pprods[j]++;
                 }
             }
@@ -83,7 +83,7 @@ public class Counters {
         nr.connects = new int[nr_nodes];
         for (int j = 0; j < nr_nodes; j++) {
             for (int p = 0; p < nr_products; p++) {
-                if (iter.x_best[j][p] == j) {
+                if (iter.x_best[p][j]== j) {
                     nr.connects[j]++;
                 }
             }
@@ -93,10 +93,10 @@ public class Counters {
         nr.pconnects = new int[nr_products][nr_nodes];
         for (int p = 0; p < nr_products; p++) {
             for (int j = 0; j < nr_nodes; j++) {
-                if (iter.x_best[j][p] == j) {
+                if (iter.x_best[p][j] == j) {
                     // Count how many nodes assign product p to hub j
                     for (int i = 0; i < nr_nodes; i++) {
-                        if (iter.x_best[i][p] == j) {
+                        if (iter.x_best[p][i] == j) {
                             nr.pconnects[p][j]++;
                         }
                     }

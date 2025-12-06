@@ -4,7 +4,7 @@ import antcolony.GetSolutions.Solution;
 import antcolony.GetSolutions.SolutionX;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
-import antcolony.ortools.HiGHSLR;
+import antcolony.ortools.MP_CSAHLP;
 import antcolony.ortools.HiGHSMILP;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,14 +13,14 @@ import org.apache.logging.log4j.Logger;
 public class RunAco {
 
 	
-	private static final Logger log = LogManager.getLogger(PreProc.class);
+	private static final Logger log = LogManager.getLogger(RunAco.class);
 	
 	protected static final double MAX_COST = 1e10;
 	private static final String BEST_LOG = "best.txt";
 	private static final String GAP_IN = "out_best.txt";
 	
 	public static void runAco(Data dat, String fichIn, String fichOut) {
-		log.info("START RUN ACO - " + fichIn);
+		log.info("START RUN ACO - {}", fichIn);
 
 		int nbNodes = dat.nbNodes;
 		int nbProducts = dat.nbProducts;
@@ -35,7 +35,7 @@ public class RunAco {
 		int sum_remaining;
 
 		PNH index = null;
-		Aco a;
+		Aco aco;
 		PreProc pre;
 		Solution sol = null;
 		SolutionX sl;
@@ -53,13 +53,13 @@ public class RunAco {
 					scalParam += dat.f[i][p] + dat.g[i];
 				}
 			}
-			log.info("\nscal_param = " + scalParam + "\n");
+			log.info("\nscal_param = {}\n", scalParam);
 		}
 
 		// ===================================================================
 		// 2. Initialize pheromone matrices
 		// ===================================================================
-		a = new Aco(nbNodes, nbNodes, nbProducts);
+		aco = new Aco(nbProducts, nbNodes);
 		Ant[] ants = new Ant[AcoVar.NR_ANTS];
 
 		Iteration itrt = new Iteration(nbProducts, nbNodes);
@@ -75,7 +75,8 @@ public class RunAco {
 		if (AcoVar.SCAL_LR) {
 			log.info("COMPUTING CPLEX LR");
 			try {
-				a = HiGHSLR.run(tLR, scalParam, dat, a);
+				MP_CSAHLP lrSolver = new MP_CSAHLP(nbProducts, nbNodes);
+				aco = lrSolver.solve(dat);
 			} catch (Exception e) {
 				System.err.println("Error while running HiGHS LR:");
 				e.printStackTrace();
@@ -91,9 +92,9 @@ public class RunAco {
 		for (p = 0; p < nbProducts; p++) {
 			for (i = 0; i < nbNodes; i++) {
 				for (j = 0; j < nbNodes; j++) {
-					double aux = a.tau0[i][j][p] * AcoVar.TAO + AcoVar.TAU0;
-					a.tau0[i][j][p] = aux;
-					a.tau[i][j][p] = aux;
+					double aux = aco.tau0[p][i][j] * AcoVar.TAO + AcoVar.TAU0;
+					aco.tau0[p][i][j] = aux;
+					aco.tau[p][i][j] = aux;
 				}
 			}
 		}
@@ -210,9 +211,9 @@ public class RunAco {
 						// PSEUDO-RANDOM PROPORTIONAL RULE
 						double q = AcoVar.myrand();
 						if(q <= AcoVar.Q0){
-							index=Greedy.run(ants[k].life,dat,a,ants[k]);
+							index=Greedy.run(ants[k].life,dat,aco,ants[k]);
 						} else {
-							index=Roulette.run(ants[k].life,dat,a,ants[k],pre,hv);
+							index=Roulette.run(ants[k].life,dat,aco,ants[k],pre,hv);
 						}
 						// END OF PSEUDO-RANDOM PROPORTIONAL RULE
 					} //else // if(ant_life<=0)
@@ -220,7 +221,7 @@ public class RunAco {
 					if(ants[k].life>0){
 						// Actions taken if ant not dead
 						Actions.addSolutionComponent(index, dat, ants[k],temp_cost);
-						Actions.localPheromoneUpdate(index.prod, index.hub, index.node, a);
+						Actions.localPheromoneUpdate(index.prod, index.hub, index.node, aco);
 						// Apply Single Allocation
 						if(index.node!=index.hub){
 							Actions.applySingleAllocationRules(index.prod, index.hub, index.node, dat.nbNodes, ants[k], 1, 1);
@@ -243,7 +244,7 @@ public class RunAco {
 						temp_cost = Actions.openHub(index, dat, ants[k], temp_cost);
 
 						// if hub not dedicated to product p yet, dedicate it to product p
-						temp_cost = Actions.dedicateHub(index, dat, ants[k], a, k, temp_cost);
+						temp_cost = Actions.dedicateHub(index, dat, ants[k], aco, k, temp_cost);
 
 						///////// ///////// //// END SOLUTION COMPONENT SELECTION RULE   ///// ///////// 
 
@@ -361,9 +362,9 @@ public class RunAco {
 					for (j=0; j<dat.nbNodes; j++) 
 						for (k = 0 ; k < dat.nbNodes; k++) 
 							for(p = 0; p < dat.nbProducts; p++){ 
-								itrt.y_best[i][j][k][p]=sol.y[i][j][k][p];
+								itrt.y_best[p][i][j][k]=sol.y[p][i][j][k];
 								if(itrt.best_cost<=better.cost)
-									better.y[i][j][k][p]=sol.y[i][j][k][p];
+									better.y[p][i][j][k]=sol.y[p][i][j][k];
 							}
 
 				////////// GLOBAL PHEROMONE UPDATING
@@ -373,13 +374,13 @@ public class RunAco {
 					if(it>1){
 						if(itrt.best_cost<global_best+global_best*AcoVar.UPDATE_PARAM)
 							//if(itrt.best_cost<iter[it-1].best_cost)
-							Actions.globalPheromoneUpdate(dat,a,itrt,scalParam);
+							Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
 					}
 					else{
-						Actions.globalPheromoneUpdate(dat,a,itrt,scalParam);
+						Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
 					}
 				} else {
-					Actions.globalPheromoneUpdate(dat,a,itrt,scalParam);
+					Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
 				}
 				if(itrt.best_cost>=global_best){
 					best_count++;
@@ -405,7 +406,7 @@ public class RunAco {
 				nr_dead++;
 				if(AcoVar.UPDATE_DEAD){
 					if(nr_dead > AcoVar.MAX_DEAD){
-						Actions.globalDeadPheromoneUpdate(dat,a,ants[kk] ,scalParam, global_best);
+						Actions.globalDeadPheromoneUpdate(dat,aco,ants[kk] ,scalParam, global_best);
 					}
 				}
 			}
