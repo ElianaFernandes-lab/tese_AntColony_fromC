@@ -5,7 +5,6 @@ import antcolony.GetSolutions.SolutionX;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
 import antcolony.ortools.MP_CSAHLP;
-import antcolony.ortools.HiGHSMILP;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,7 +74,7 @@ public class RunAco {
 		if (AcoVar.SCAL_LR) {
 			log.info("COMPUTING CPLEX LR");
 			try {
-				MP_CSAHLP lrSolver = new MP_CSAHLP(nbProducts, nbNodes);
+				MP_CSAHLP lrSolver = new MP_CSAHLP(nbProducts, nbNodes, true);
 				aco = lrSolver.solve(dat);
 			} catch (Exception e) {
 				System.err.println("Error while running HiGHS LR:");
@@ -356,7 +355,8 @@ public class RunAco {
 				itrt.best_cost=itrt.best_cost+inter_cost;
 				sol = GetSolutions.getSolution(dat,ants[kk], itrt);
 
-				HiGHSMILP.solve(dat, sol, itrt.best_cost, fichIn, fichOut);
+				MP_CSAHLP milpSolver = new MP_CSAHLP(nbProducts, nbNodes, true);
+				aco = milpSolver.solve(dat);
 				// save y value TIRAR
 				for (i = 0; i<dat.nbNodes; i++) 
 					for (j=0; j<dat.nbNodes; j++) 
@@ -430,7 +430,8 @@ public class RunAco {
 		log.info("before cplex");
 
 		if(global_best<max_cost){
-			HiGHSMILP.solve(dat, sol, better.cost, fichIn, fichOut);
+			MP_CSAHLP milpSolver = new MP_CSAHLP(nbProducts, nbNodes, true);
+			aco = milpSolver.solve(dat);
 
 			// save y value
 			for (i = 0; i<dat.nbNodes; i++) 

@@ -20,16 +20,20 @@ import antcolony.ReadData.Data;
 public class MP_CSAHLP {
 
 	private static final Logger log = LogManager.getLogger(MP_CSAHLP.class);
-	
+
 	private int nbProducts;
 	private int nbNodes;
+	
+	private boolean isLinearRelaxation = false;
+	
 	MPVariable[][][] x;
 	MPVariable[][][][] y;
 	MPVariable[] z;
 
-	public MP_CSAHLP(int nbProducts, int nbNodes) {
+	public MP_CSAHLP(int nbProducts, int nbNodes, boolean isLinearRelaxation) {
 		this.nbProducts = nbProducts;
 		this.nbNodes = nbNodes;
+		this.isLinearRelaxation = isLinearRelaxation;
 	}
 
 	public Aco solve(Data data) {
@@ -48,22 +52,22 @@ public class MP_CSAHLP {
 		} else {
 			log.error("{} solver used.", solverId);
 		}
-		
+
 		try {
 			// ==============================
 			// Variables
 			// ==============================
 			log.error("Creating variables...");
-			createVars(solver);
+			createVars(solver, this.isLinearRelaxation);
 			log.error("Variables created. Total variables: {}", solver.numVariables());
-			
+
 			// ==============================
 			// Objective function (create BEFORE constraints)
 			// ==============================
 			log.error("Creating objective function...");
 			MPObjective obj = createObjectiveFunction(solver, data);
 			log.error("Objective function created.");
-			
+
 			// ==============================
 			// 1. Single allocation constraint
 			// ==============================
@@ -75,16 +79,16 @@ public class MP_CSAHLP {
 			// 2. Link allocation constraints
 			// x[p][i][k] <= x[p][k][k]
 			// ==============================
-			log.error("Adding link allocation constraints...");
-			addLinkAllocationConstraints(solver);
-			log.error("Added link allocation constraints. Total constraints: {}", solver.numConstraints());
+			log.error("Adding node allocation constraints...");
+			addNodeAllocationConstraints(solver);
+			log.error("Added node allocation constraints. Total constraints: {}", solver.numConstraints());
 
 			// ==============================
 			// 3. Maximum products at hub
 			// sum_p x[k][k][p] <= L[k] * z[k]
 			// ==============================
 			log.error("Adding max products at hub constraints...");
-			addMaxProdsAtHubConstraints(solver, data);
+			addHubLimitProdConstraints(solver, data);
 			log.error("Added max products at hub constraints. Total constraints: {}", solver.numConstraints());
 
 			// ==============================
@@ -101,6 +105,10 @@ public class MP_CSAHLP {
 			log.error("Adding flow bounds constraints...");
 			addFlowBoundsConstraints(solver, data);
 			log.error("Added flow bounds constraints. Total constraints: {}", solver.numConstraints());
+			
+			log.error("Adding flow no negative constraints...");
+			addNonNegativeFlowConstraints(solver);
+			log.error("Added flow no negative constraints. Total constraints: {}", solver.numConstraints());
 
 			// ==============================
 			// 6. Capacity per hub
@@ -122,7 +130,7 @@ public class MP_CSAHLP {
 			// ==============================
 			log.error("Solving model with {} variables and {} constraints...", 
 					solver.numVariables(), solver.numConstraints());
-			
+
 			MPSolver.ResultStatus resultStatus = solver.solve();
 
 			long endTime = System.nanoTime();
@@ -133,7 +141,7 @@ public class MP_CSAHLP {
 				double timeLR = runtimeSec;
 
 				logSolution(solver, obj, runtimeSec);
-				
+
 				// Copy solution to tau0 for ACO
 				for (int i = 0; i < this.nbNodes; i++) {
 					for (int j = 0; j < this.nbNodes; j++) {
@@ -207,18 +215,23 @@ public class MP_CSAHLP {
 		}
 	}
 
-	private void createVars(MPSolver solver) {
-		createXVars(solver);
+	private void createVars(MPSolver solver, boolean isLinearRelaxation) {
+		createXVars(solver, isLinearRelaxation);
 		createYVars(solver);
 		createZVars(solver);
 	}
 
-	private void createXVars(MPSolver solver) {
+	private void createXVars(MPSolver solver, boolean isLinearRelaxation) {
 		this.x = new MPVariable[this.nbProducts][this.nbNodes][this.nbNodes];
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
-					this.x[p][i][j] = solver.makeNumVar(0.0, 1.0, "x" + p + "i" + i + "j" + j);
+					if(isLinearRelaxation) {
+						this.x[p][i][j] = solver.makeNumVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
+					} else {
+						this.x[p][i][j] = solver.makeIntVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
+					}
+					
 				}
 			}
 		}
@@ -230,8 +243,7 @@ public class MP_CSAHLP {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
 					for (int l = 0; l < this.nbNodes; l++) {
-						this.y[p][i][k][l] = solver.makeNumVar(0.0, Double.POSITIVE_INFINITY, 
-								"y" + p + "i" + i + "k" + k + "l" + l);
+						this.y[p][i][k][l] = solver.makeNumVar(0.0, Double.POSITIVE_INFINITY, "y_" + p + "_" + i + "_" + k + "_" + l);
 					}
 				}
 			}
@@ -241,74 +253,109 @@ public class MP_CSAHLP {
 	private void createZVars(MPSolver solver) {
 		this.z = new MPVariable[this.nbNodes];
 		for (int j = 0; j < this.nbNodes; j++) {
-			this.z[j] = solver.makeNumVar(0.0, 1.0, "z" + j);
+			this.z[j] = solver.makeNumVar(0.0, 1.0, "z_" + j);
 		}
 	}
 
 	private MPObjective createObjectiveFunction(MPSolver solver, Data data) {
 		MPObjective obj = solver.objective();
-		
+
 		// First part: costs related to x variables
-		for (int p = 0; p < this.nbProducts; p++) {
-			for (int i = 0; i < this.nbNodes; i++) {
-				for (int k = 0; k < this.nbNodes; k++) {
-					double coeff = data.d[i][k] * (data.chi[p] * data.originatedFlow[p][i] + data.delta[p] * data.destinedFlow[p][i]);
-					obj.setCoefficient(this.x[p][i][k], coeff);
-					
-					// Second part: costs related to y variables
-					for (int l = 0; l < this.nbNodes; l++) {
-						obj.setCoefficient(this.y[p][i][k][l], data.alpha[p] * data.d[k][l]);
-					}
-				}
-			}
-		}
-		
-		// Third part: fixed costs for hubs
-		for (int k = 0; k < this.nbNodes; k++) {
-			obj.setCoefficient(this.z[k], data.g[k]);
-			
-			// Fourth part: product-specific hub costs
-			for (int p = 0; p < this.nbProducts; p++) {
-				obj.setCoefficient(this.x[p][k][k], data.f[p][k]);
-			}
-		}
-		
+		addFlowRoutingOrigDestCosts(data, obj);
+		addFlowRoutingCosts(data, obj);
+		addOpenHubCosts(data, obj);
+		addDedicateHubCosts(data, obj);
+
 		obj.setMinimization();
 		return obj;
 	}
 
-	/**
-	 * @param solver
-	 */
-	private void addSingleAllocationConstraints(MPSolver solver) {
+	private void addOpenHubCosts(Data data, MPObjective obj) {
+		for (int i = 0; i < this.nbNodes; i++) {
+			double coeff = data.g[i];
+			obj.setCoefficient(this.z[i], coeff);
+		}
+	}
+
+	private void addDedicateHubCosts(Data data, MPObjective obj) {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
-				MPConstraint c = solver.makeConstraint(1.0, 1.0, "SA_" + p + i);
-				
-				for (int j = 0; j < this.nbNodes; j++) {
-					if (this.x[p][i][j] == null) {
-						throw new IllegalStateException("Variable x[" + p + "][" + i + "][" + j + "] is null");
+				double coeff = data.f[p][i];
+				obj.setCoefficient(this.x[p][i][i], coeff); // Note: i appears twice for diagonal
+			}
+		}
+	}
+
+	private void addFlowRoutingCosts(Data data, MPObjective obj) {
+		for (int p = 0; p < this.nbProducts; p++) {
+			for (int i = 0; i < this.nbNodes; i++) {  // Assuming I nodes
+				for (int k = 0; k < this.nbNodes; k++) {  // Assuming K nodes
+					for (int l = 0; l < this.nbNodes; l++) {  // Assuming L nodes
+						double coeff = data.alpha[p] * data.d[k][l];
+						obj.setCoefficient(this.y[p][i][k][l], coeff);
 					}
-					c.setCoefficient(this.x[p][i][j], 1.0);
 				}
 			}
 		}
 	}
 
-	private void addLinkAllocationConstraints(MPSolver solver) {
+	private void addFlowRoutingOrigDestCosts(Data data, MPObjective obj) {
+		for (int p = 0; p < this.nbProducts; p++) {
+			for (int i = 0; i < this.nbNodes; i++) {
+				for (int k = 0; k < this.nbNodes; k++) {
+					double coeff = data.d[i][k] * ((data.chi[p] * data.originatedFlow[p][i]) + (data.delta[p] * data.destinedFlow[p][i]));
+					obj.setCoefficient(this.x[p][i][k], coeff);
+				}
+			}
+		}
+	}
+
+	/**
+	 * @apiNote
+	 * Adds single allocation constraints to the optimization model.
+	 * 
+	 * For each node i and product p, ensures that node i is assigned to exactly one hub k.
+	 * 
+	 * Mathematical formulation:
+	 *   sum(x[i][k][p] for all k ∈ nodes) = 1  ∀ i ∈ nodes, p ∈ products
+	 * 
+	 * Where:
+	 *   x[i][k][p] = 1 if node i is assigned to hub k for product p
+	 *              = 0 otherwise
+	 * 
+	 * This constraint guarantees that:
+	 * 1. Each node receives each product from exactly one hub (single sourcing)
+	 * 2. No splitting of demand for a product across multiple hubs
+	 * 3. Self-assignment is allowed (node can serve as its own hub when i = k)
+	 * @param solver
+	 */
+	private void addSingleAllocationConstraints(MPSolver solver) {
+		for (int i = 0; i < this.nbNodes; i++) {
+			for (int p = 0; p < this.nbProducts; p++) {
+				MPConstraint c = solver.makeConstraint(1.0, 1.0, "SA_" + i + "_" + p);
+
+				 // Sum x[i][k][p] over all k in K
+				for (int k = 0; k < this.nbNodes; k++) {
+					c.setCoefficient(this.x[p][i][k], 1.0);
+				}
+			}
+		}
+	}
+
+	private void addNodeAllocationConstraints(MPSolver solver) {
 		// Constraint: x[p][i][j] <= x[p][j][j]
 		// (If node i is allocated to hub j for product p, then j must be a hub for product p)
 		// Rewritten as: x[p][i][j] - x[p][j][j] <= 0
-		
+
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
 					// Skip self-allocation: x[p][j][j] <= x[p][j][j] is trivial
 					if (i == j) continue;
-					
+
 					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, 
-							"LA" + p + "i" + i + "j" + j);
-					
+							"LA_" + p + "_" + i + "_" + j);
+
 					c.setCoefficient(this.x[p][i][j], 1.0);
 					c.setCoefficient(this.x[p][j][j], -1.0);
 				}
@@ -316,37 +363,49 @@ public class MP_CSAHLP {
 		}
 	}
 
-	private void addMaxProdsAtHubConstraints(MPSolver solver, Data data) {
+	/**
+	 * @apiNote The constraint is created as: expression ≤ 0
+	 * Which means: sum(x[p][j][j]) - L[j] * z[j] ≤ 0
+	 * Rearranged: sum(x[p][j][j]) ≤ L[j] * z[j]
+	 * @param solver
+	 * @param data
+	 */
+	private void addHubLimitProdConstraints(MPSolver solver, Data data) {
 		for (int j = 0; j < this.nbNodes; j++) {
-			MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, 
-					"MPH" + j);
-			
+			MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, "HLP_" + j);
+
 			for (int p = 0; p < this.nbProducts; p++) {
 				c.setCoefficient(this.x[p][j][j], 1.0);
 			}
-			
+
 			c.setCoefficient(this.z[j], -data.L[j]);
 		}
 	}
 
+	/**
+	 * @apiNote flow divergence
+	 * divergence equations for commodities ip at node k - flow conservation
+	 * sum in l ypikl − sum in l ypilk = Opi * xpik − wpij * xpjk ,i,k∈N,p∈P,
+	 * @param solver
+	 * @param data
+	 */
 	private void addFlowBalanceConstraints(MPSolver solver, Data data) {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
-					MPConstraint c = solver.makeConstraint(0.0, 0.0, 
-							"FB" + p + "i" + i + "k" + k);
-					
+					MPConstraint c = solver.makeConstraint(0.0, 0.0, "FB_" + p + "i_" + i + "k_" + k);
+
 					// Flow conservation at hub k for origin i
 					for (int l = 0; l < this.nbNodes; l++) {
 						c.setCoefficient(this.y[p][i][k][l], 1.0);   // outflow from k
 						c.setCoefficient(this.y[p][i][l][k], -1.0);  // inflow to k
 					}
-					
+
 					// Supply/demand terms
 					c.setCoefficient(this.x[p][i][k], -data.originatedFlow[p][i]);
-					
+
 					for (int j = 0; j < this.nbNodes; j++) {
-						c.setCoefficient(this.x[p][j][k], data.w[p][i][j]);
+						c.setCoefficient(this.x[p][i][k], data.w[p][i][j]);
 					}
 				}
 			}
@@ -357,16 +416,35 @@ public class MP_CSAHLP {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
-					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, data.originatedFlow[p][i], 
-							"FBnd" + p + "i" + i + "j" + j);
-					
+					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, "FBnd_" + p + "_" + i + "_" + j);
+
 					for (int l = 0; l < this.nbNodes; l++) {
 						if (l != j) {
 							c.setCoefficient(this.y[p][i][j][l], 1.0);
 						}
 					}
-					
+
 					c.setCoefficient(this.x[p][i][j], -data.originatedFlow[p][i]);
+				}
+			}
+		}
+	}
+	
+	private void addNonNegativeFlowConstraints(MPSolver solver) {
+		for (int p = 0; p < this.nbProducts; p++) {
+			for (int i = 0; i < this.nbNodes; i++) {
+				for (int k = 0; k < this.nbNodes; k++) {
+
+					// Constraint: sum_{l != k} y[i,k,l,p] ≥ 0
+					// This ensures total flow through hub k from node i is non-negative
+					MPConstraint constraint = solver.makeConstraint(0.0, Double.POSITIVE_INFINITY, "FNoNeg_" + p + "_" + i + "_" + k);
+
+					// Sum of y[i,k,l,p] for all l ≠ k
+					for (int l = 0; l < this.nbNodes; l++) {
+						if (l != k) {
+							constraint.setCoefficient(this.y[p][i][k][l], 1.0);
+						}
+					}
 				}
 			}
 		}
@@ -375,17 +453,16 @@ public class MP_CSAHLP {
 	private void addCapacityConstraints(MPSolver solver, Data data) {
 		// Constraint: sum_i O[i][p] * x[i][k][p] <= gamma[k][p] * x[k][k][p]
 		// Rewritten as: sum_i O[i][p] * x[i][k][p] - gamma[k][p] * x[k][k][p] <= 0
-		
+
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int k = 0; k < this.nbNodes; k++) {
-				MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, 
-						"Cap" + p + "k" + k);
-				
+				MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, "Cap_" + p + "_" + k);
+
 				// Sum of allocated demand to hub k for product p
 				for (int i = 0; i < this.nbNodes; i++) {
 					c.setCoefficient(this.x[p][i][k], data.originatedFlow[p][i]);
 				}
-				
+
 				// Hub capacity for product p
 				c.setCoefficient(this.x[p][k][k], -data.gamma[p][k]);
 			}
@@ -408,21 +485,21 @@ public class MP_CSAHLP {
 
 			double totalCovered = 0.0;
 			int r = 0;
-			
+
 			// Greedy selection of hubs with largest capacity
 			while (totalCovered < prodDemand && !candidateHubs.isEmpty()) {
 				double bestGamma = -1.0;
 				int bestIdx = -1;
-				
+
 				for (int idx : candidateHubs) {
 					if (data.gamma[p][idx] > bestGamma && data.originatedFlow[p][idx] < data.gamma[p][idx]) {
 						bestGamma = data.gamma[p][idx];
 						bestIdx = idx;
 					}
 				}
-				
+
 				if (bestIdx == -1) break;
-				
+
 				totalCovered += bestGamma;
 				candidateHubs.remove(Integer.valueOf(bestIdx));
 				r++;
@@ -431,11 +508,11 @@ public class MP_CSAHLP {
 			// Add constraint: sum of hubs for product p >= r
 			MPConstraint c = solver.makeConstraint(r, Double.POSITIVE_INFINITY, 
 					"MHP" + p);
-			
+
 			for (int k = 0; k < this.nbNodes; k++) {
 				c.setCoefficient(this.x[p][k][k], 1.0);
 			}
-			
+
 			log.debug("Product {} requires minimum {} hubs to cover demand {}", p, r, prodDemand);
 		}
 	}

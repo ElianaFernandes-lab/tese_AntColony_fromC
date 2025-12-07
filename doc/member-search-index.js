@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"antcolony.ortools","c":"MP_CSAHLP","l":"MP_CSAHLP(int, int)","u":"%3Cinit%3E(int,int)"},{"p":"antcolony.ortools","c":"MP_CSAHLP","l":"solve(ReadData.Data)","u":"solve(antcolony.ReadData.Data)"}];updateSearchResults();

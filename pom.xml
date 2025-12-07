@@ -14,7 +14,7 @@
     <dependency>
         <groupId>com.google.ortools</groupId>
         <artifactId>ortools-java</artifactId>
-        <version>9.12.4544</version>
+        <version>9.14.6206</version>
     </dependency>
     
     <!-- Log4j 2 dependency -->
@@ -28,6 +28,7 @@
         <artifactId>log4j-api</artifactId>
         <version>2.20.0</version>
     </dependency>
+
   </dependencies>
 
 

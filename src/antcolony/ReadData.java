@@ -91,7 +91,7 @@ public class ReadData {
                 for (int j = 0; j < nbNodes; j++) {
                     double dx = coordenadas[i].x - coordenadas[j].x;
                     double dy = coordenadas[i].y - coordenadas[j].y;
-                    dados.d[i][j] = Math.sqrt(dx * dx + dy * dy);
+                    dados.d[i][j] = Math.sqrt(dx * dx + dy * dy) / 1000;
                 }
             }
 
