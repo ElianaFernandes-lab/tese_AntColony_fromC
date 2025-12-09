@@ -1,242 +1,218 @@
 package antcolony;
 
-/**
- * CloseRandomHub.java
- * Translated from closerandomhub.cpp + closerandomhub.h
- * Original by Eliana Fernandes
- * Copyright (c) 2015 Eliana Fernandes. All rights reserved.
- */
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
+import antcolony.utils.DeepCopyArray;
 
 public class CloseRandomHub {
 
-    /**
-     * Local Search: Randomly selects a hub and tries to close it completely
-     * by relocating all nodes assigned to it (for a random product).
-     * Accepts the move if total cost decreases (including fixed cost savings).
-     */
-    public static int closeRandomHub(Data dados, Ant ants, Iteration iter, double max_cost) {
+	private static final Logger log = LogManager.getLogger(CloseRandomHub.class);
+	private static final boolean PRINT_LOGS = AcoVar.CRHHIST ;
 
-        logCRH("=== CloseRandomHub started ===");
+	private CloseRandomHub() {
+		// default constructor
+	}
 
-        if (ants.life <= 0) {
-            logCRH("Ant is dead. Skipping.");
-            return 0;
-        }
+	/**
+	 * Local Search: Randomly selects a hub and tries to close it completely
+	 * by relocating all nodes assigned to it (for a random product).
+	 * Accepts the move if total cost decreases (including fixed cost savings).
+	 */
+	public static boolean closeRandomHub(Data dados, Ant ants, Iteration iter, double max_cost) {
 
-        Counters nr = Counting.countAll(dados.nbProducts, dados.nbNodes, iter);
+		log.error("=== CloseRandomHub started ===");
 
-        // Temporary solution and capacities (to test move without committing)
-        int[][] x_temp = new int[dados.nbProducts][dados.nbNodes];
-        double[][] temp_cap = new double[dados.nbNodes][dados.nbProducts];
+		if (ants.life <= 0) {
+			log.error("Ant is dead. Skipping.");
+			return false;
+		}
 
-        // Deep copy current best solution
-        for (int p = 0; p < dados.nbProducts; p++) {
-            for (int i = 0; i < dados.nbNodes; i++) {
-                x_temp[p][i]= iter.x_best[p][i];
-            }
-        }
-        for (int j = 0; j < dados.nbNodes; j++) {
-            for (int p = 0; p < dados.nbProducts; p++) {
-                temp_cap[j][p] = ants.avail_cap[p][j];
-            }
-        }
+		Counters nr = Counting.countAll(dados.nbProducts, dados.nbNodes, iter);
 
-        double temp_cost = iter.best_cost;
-        double hub_cost_to_save = 0.0;
+		// Temporary solution and capacities (to test move without committing)
+		double[][] temp_cap =  DeepCopyArray.deepCopy(ants.avail_cap);
 
-        // Choose random product
-        int prod = (int) (Math.random() * dados.nbProducts);
-        logCRH("Selected random product: " + prod);
+		// Deep copy current best solution
+		int[][] x_temp = DeepCopyArray.deepCopy(iter.x_best);
 
-        // Get list of hubs used for this product
-        List<Integer> hubList = new ArrayList<>();
-        for (int l = 0; l < nr.phubs[prod]; l++) {
-            int h = nr.list_phubs[prod][l];
-            if (h >= 0) hubList.add(h);
-        }
+		double temp_cost = iter.best_cost;
+		double hub_cost_to_save = 0.0;
 
-        int nr_hubs = hubList.size();
-        if (nr_hubs <= 1) {
-            logCRH("Only one or zero hubs for product " + prod + ". Cannot close.");
-            return 0;
-        }
+		// Choose random product
+		int prod = (int) (Math.random() * dados.nbProducts);
+		log.error("Selected random product: " + prod);
 
-        logCRH("Product " + prod + " has " + nr_hubs + " hubs: " + hubList);
+		// Get list of hubs used for this product
+		List<Integer> hubList = new ArrayList<>();
+		for (int l = 0; l < nr.phubs[prod]; l++) {
+			int h = nr.list_phubs[prod][l];
+			if (h >= 0) hubList.add(h);
+		}
 
-        // Choose random hub to close
-        int hub_index = (int) (Math.random() * nr_hubs);
-        int hub_to_close = hubList.get(hub_index);
-        logCRH("Attempting to close hub " + hub_to_close + " for product " + prod);
+		int nr_hubs = hubList.size();
+		if (nr_hubs <= 1) {
+			log.error("Only one or zero hubs for product " + prod + ". Cannot close.");
+			return false;
+		}
 
-        // Determine fixed cost savings
-        if (nr.pprods[hub_to_close] == 1) {
-            hub_cost_to_save = dados.f[prod][hub_to_close] + dados.g[hub_to_close];
-            logCRH("This is the last product → full hub closure saves g[" + hub_to_close + "] + f");
-        } else {
-            hub_cost_to_save = dados.f[prod][hub_to_close];
-            logCRH("Only product-specific fixed cost f[" + hub_to_close + "][" + prod + "] saved");
-        }
+		log.error("Product " + prod + " has " + nr_hubs + " hubs: " + hubList);
 
-        // Get all nodes currently assigned to this hub for this product
-        List<Integer> nodesToRelocate = new ArrayList<>();
-        for (int i = 0; i < dados.nbNodes; i++) {
-            if (iter.x_best[prod][i] == hub_to_close) {
-                nodesToRelocate.add(i);
-            }
-        }
+		// Choose random hub to close
+		int hub_index = (int) (Math.random() * nr_hubs);
+		int hub_to_close = hubList.get(hub_index);
+		log.error("Attempting to close hub " + hub_to_close + " for product " + prod);
 
-        int nr_nodes = nodesToRelocate.size();
-        logCRH("Nodes assigned to hub " + hub_to_close + " (product " + prod + "): " + nodesToRelocate);
+		// Determine fixed cost savings
+		if (nr.pprods[hub_to_close] == 1) {
+			hub_cost_to_save = dados.f[prod][hub_to_close] + dados.g[hub_to_close];
+			log.error("This is the last product → full hub closure saves g[" + hub_to_close + "] + f");
+		} else {
+			hub_cost_to_save = dados.f[prod][hub_to_close];
+			log.error("Only product-specific fixed cost f[" + hub_to_close + "][" + prod + "] saved");
+		}
 
-        if (nr_nodes == 0) {
-            logCRH("No nodes assigned. Can close for free.");
-        }
+		// Get all nodes currently assigned to this hub for this product
+		List<Integer> nodesToRelocate = new ArrayList<>();
+		for (int i = 0; i < dados.nbNodes; i++) {
+			if (iter.x_best[prod][i] == hub_to_close) {
+				nodesToRelocate.add(i);
+			}
+		}
 
-        // Remove hub_to_close from candidate relocation list
-        List<Integer> candidateHubs = new ArrayList<>(hubList);
-        candidateHubs.remove(Integer.valueOf(hub_to_close));
+		int nr_nodes = nodesToRelocate.size();
+		log.error("Nodes assigned to hub " + hub_to_close + " (product " + prod + "): " + nodesToRelocate);
 
-        boolean allRelocated = true;
+		if (nr_nodes == 0) {
+			log.error("No nodes assigned. Can close for free.");
+		}
 
-        // Try to relocate each node (greedily: largest flow first, to largest capacity hub)
-        for (int attempt = 0; attempt < nr_nodes; attempt++) {
-            if (candidateHubs.isEmpty()) {
-                allRelocated = false;
-                break;
-            }
+		// Remove hub_to_close from candidate relocation list
+		List<Integer> candidateHubs = new ArrayList<>(hubList);
+		candidateHubs.remove(Integer.valueOf(hub_to_close));
 
-            // Find node with largest flow
-            double maxFlow = -1;
-            int nodeToMove = -1;
-            for (int node : nodesToRelocate) {
-                double flow = dados.originatedFlow[prod][node];
-                if (flow > maxFlow) {
-                    maxFlow = flow;
-                    nodeToMove = node;
-                }
-            }
+		boolean allRelocated = true;
 
-            // Find hub with largest remaining capacity
-            double bestCap = -1;
-            int bestHub = -1;
-            for (int h : candidateHubs) {
-                if (temp_cap[h][prod] > bestCap) {
-                    bestCap = temp_cap[h][prod];
-                    bestHub = h;
-                }
-            }
+		// Try to relocate each node (greedily: largest flow first, to largest capacity hub)
+		for (int attempt = 0; attempt < nr_nodes; attempt++) {
+			if (candidateHubs.isEmpty()) {
+				allRelocated = false;
+				break;
+			}
 
-            if (maxFlow > bestCap + 1e-9) {
-                logCRH("Cannot relocate node " + nodeToMove + " (flow=" + maxFlow + ") — no hub has enough capacity");
-                allRelocated = false;
-                break;
-            }
+			// Find node with largest flow
+			double maxFlow = -1;
+			int nodeToMove = -1;
+			for (int node : nodesToRelocate) {
+				double flow = dados.originatedFlow[prod][node];
+				if (flow > maxFlow) {
+					maxFlow = flow;
+					nodeToMove = node;
+				}
+			}
 
-            // Compute cost change
-            double oldDistCost = dados.d[nodeToMove][hub_to_close] *
-                    (dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
-            double newDistCost = dados.d[nodeToMove][bestHub] *
-                    (dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
+			// Find hub with largest remaining capacity
+			double bestCap = -1;
+			int bestHub = -1;
+			for (int h : candidateHubs) {
+				if (temp_cap[prod][h] > bestCap) {
+					bestCap = temp_cap[h][prod];
+					bestHub = h;
+				}
+			}
 
-            double deltaCost = newDistCost - oldDistCost;
-            temp_cost += deltaCost;
+			if (maxFlow > bestCap + 1e-9) {
+				log.error("Cannot relocate node " + nodeToMove + " (flow=" + maxFlow + ") — no hub has enough capacity");
+				allRelocated = false;
+				break;
+			}
 
-            logCRH("Relocating node " + nodeToMove +
-                   " → hub " + bestHub +
-                   " | Δdist = " + deltaCost +
-                   " | new temp_cost = " + temp_cost);
+			// Compute cost change
+			double oldDistCost = dados.d[nodeToMove][hub_to_close] *
+					(dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
+			double newDistCost = dados.d[nodeToMove][bestHub] *
+					(dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
 
-            // Apply relocation
-            x_temp[prod][nodeToMove] = bestHub;
-            temp_cap[bestHub][prod] -= maxFlow;
-            temp_cap[hub_to_close][prod] += maxFlow;
+			double deltaCost = newDistCost - oldDistCost;
+			temp_cost += deltaCost;
 
-            nodesToRelocate.remove(Integer.valueOf(nodeToMove));
-        }
+			log.error("Relocating node " + nodeToMove +
+					" → hub " + bestHub +
+					" | Δdist = " + deltaCost +
+					" | new temp_cost = " + temp_cost);
 
-        // If all nodes relocated successfully → accept move
-        if (allRelocated) {
-            double final_cost = temp_cost - hub_cost_to_save;
+			// Apply relocation
+			x_temp[prod][nodeToMove] = bestHub;
+			temp_cap[bestHub][prod] -= maxFlow;
+			temp_cap[hub_to_close][prod] += maxFlow;
 
-            if (final_cost < iter.best_cost - 1e-9) {
-                logCRH("IMPROVEMENT! Cost: " + iter.best_cost + " → " + final_cost +
-                       " (saved fixed cost: " + hub_cost_to_save + ")");
+			nodesToRelocate.remove(Integer.valueOf(nodeToMove));
+		}
 
-                // Commit solution
-                for (int p = 0; p < dados.nbProducts; p++) {
-                    for (int i = 0; i < dados.nbNodes; i++) {
-                        iter.x_best[p][i] = x_temp[p][i];
-                    }
-                }
-                for (int j = 0; j < dados.nbNodes; j++) {
-                    for (int p = 0; p < dados.nbProducts; p++) {
-                        ants.avail_cap[p][j] = temp_cap[j][p];
-                    }
-                }
+		// If all nodes relocated successfully → accept move
+		if (allRelocated) {
+			double final_cost = temp_cost - hub_cost_to_save;
 
-                iter.best_cost = final_cost;
+			if (final_cost < iter.best_cost - 1e-9) {
+				log.error("IMPROVEMENT! Cost: " + iter.best_cost + " → " + final_cost +
+						" (saved fixed cost: " + hub_cost_to_save + ")");
 
-                // Close physical hub if it was the last product
-                if (nr.pprods[hub_to_close] == 1) {
-                    iter.z_best[hub_to_close] = 0;
-                    logCRH("Physical hub " + hub_to_close + " fully closed (z=0)");
-                }
+				// Commit solution
+				for (int p = 0; p < dados.nbProducts; p++) {
+					for (int i = 0; i < dados.nbNodes; i++) {
+						iter.x_best[p][i] = x_temp[p][i];
+					}
+				}
+				for (int j = 0; j < dados.nbNodes; j++) {
+					for (int p = 0; p < dados.nbProducts; p++) {
+						ants.avail_cap[p][j] = temp_cap[j][p];
+					}
+				}
 
-                logCRH("CloseRandomHub: SUCCESS");
-                logSolutionAfter(iter, dados);
-                return 1;
-            } else {
-                logCRH("No improvement: " + iter.best_cost + " → " + final_cost);
-            }
-        } else {
-            logCRH("Failed to relocate all nodes. Move rejected.");
-        }
+				iter.best_cost = final_cost;
 
-        logCRH("=== CloseRandomHub ended without improvement ===");
-        return 0;
-    }
+				// Close physical hub if it was the last product
+				if (nr.pprods[hub_to_close] == 1) {
+					iter.z_best[hub_to_close] = 0;
+					log.error("Physical hub " + hub_to_close + " fully closed (z=0)");
+				}
 
-    // ===================================================================
-    // Logging
-    // ===================================================================
-    private static void logCRH(String msg) {
-        if (AcoVar.CRHHIST || AcoVar.CRH) {
-            appendToFile("CRHhistory.txt", msg);
-        }
-    }
+				log.error("CloseRandomHub: SUCCESS");
+				logSolutionAfter(iter, dados);
+				return true;
+			} else {
+				log.error("No improvement: " + iter.best_cost + " → " + final_cost);
+			}
+		} else {
+			log.error("Failed to relocate all nodes. Move rejected.");
+		}
 
-    private static void logSolutionAfter(Iteration iter, Data dados) {
-        logCRH("SOLUTION AFTER CLOSE RANDOM HUB");
-        logCRH("Variables z = 1:");
-        for (int j = 0; j < dados.nbNodes; j++) {
-            if (iter.z_best[j] == 1) {
-                logCRH("z[" + j + "]");
-            }
-        }
-        logCRH("Variables x assignments:");
-        for (int p = 0; p < dados.nbProducts; p++) {
-            for (int i = 0; i < dados.nbNodes; i++) {
-                int j = iter.x_best[p][i];
-                if (j != -1) {
-                    logCRH("x[" + i + "][" + j + "][" + p + "]");
-                }
-            }
-        }
-    }
+		log.error("=== CloseRandomHub ended without improvement ===");
+		return false;
+	}
 
-    private static void appendToFile(String filename, String text) {
-        try (PrintWriter out = new PrintWriter(new FileWriter(filename, true))) {
-            out.println(text);
-        } catch (IOException e) {
-            System.err.println("Error writing to " + filename);
-        }
-    }
+	private static void logSolutionAfter(Iteration iter, Data dados) {
+		log.error("SOLUTION AFTER CLOSE RANDOM HUB");
+		log.error("Variables z = 1:");
+		for (int j = 0; j < dados.nbNodes; j++) {
+			if (iter.z_best[j] == 1) {
+				log.error("z[" + j + "]");
+			}
+		}
+		log.error("Variables x assignments:");
+		for (int p = 0; p < dados.nbProducts; p++) {
+			for (int i = 0; i < dados.nbNodes; i++) {
+				int j = iter.x_best[p][i];
+				if (j != -1) {
+					log.error("x[" + i + "][" + j + "][" + p + "]");
+				}
+			}
+		}
+	}
+
 }

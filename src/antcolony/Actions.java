@@ -3,9 +3,9 @@ package antcolony;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import aco.utils.DeepCopyArray;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
+import antcolony.utils.DeepCopyArray;
 
 public class Actions {
 	
