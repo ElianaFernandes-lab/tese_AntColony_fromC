@@ -15,6 +15,7 @@ import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
 
 import antcolony.Aco;
+import antcolony.GetSolutions.Solution;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
 
@@ -26,7 +27,7 @@ public class MP_CSAHLP {
 	private int nbNodes;
 
 	private boolean isLinearRelaxation = false;
-	
+
 	String solverId = AcoVar.SOLVER_ID;
 
 	MPVariable[][][] x;
@@ -38,7 +39,7 @@ public class MP_CSAHLP {
 		this.nbNodes = nbNodes;
 		this.isLinearRelaxation = isLinearRelaxation;
 	}
-	
+
 	public MP_CSAHLP(int nbProducts, int nbNodes, String solverId, boolean isLinearRelaxation) {
 		this.nbProducts = nbProducts;
 		this.nbNodes = nbNodes;
@@ -47,27 +48,20 @@ public class MP_CSAHLP {
 	}
 
 	public Aco solve(Data data) {
-		Aco aco = new Aco(this.nbProducts, this.nbNodes);
-		Loader.loadNativeLibraries();
 
 		// Start timer
 		long startTime = System.nanoTime();
 
-		// Create HiGHS solver
-		MPSolver solver = MPSolver.createSolver(solverId);
-		if (solver == null) {
-			log.error("{} solver unavailable.", solverId);
-			return aco;
-		} else {
-			log.error("{} solver used.", solverId);
-		}
+		MPSolver solver = createSolver();
+
+		Aco aco = new Aco(this.nbProducts, this.nbNodes); 
 
 		try {
 			// ==============================
 			// Variables
 			// ==============================
 			log.error("Creating variables...");
-			createVars(solver, this.isLinearRelaxation);
+			createVars(solver);
 			log.error("Variables created. Total variables: {}", solver.numVariables());
 
 			// ==============================
@@ -183,23 +177,180 @@ public class MP_CSAHLP {
 		return aco;
 	}
 
-	private void createVars(MPSolver solver, boolean isLinearRelaxation) {
-		createXVars(solver, isLinearRelaxation);
-		createYVars(solver);
-		createZVars(solver);
+	public void solve(Data data, Aco aco, Solution sol) {
+
+		// Start timer
+		long startTime = System.nanoTime();
+
+		MPSolver solver = createSolver();
+
+		try {
+			// ==============================
+			// Variables
+			// ==============================
+			log.error("Creating variables...");
+			createVars(solver, sol);
+			log.error("Variables created. Total variables: {}", solver.numVariables());
+
+			// ==============================
+			// Objective function (create BEFORE constraints)
+			// ==============================
+			log.error("Creating objective function...");
+			MPObjective obj = createObjectiveFunction(solver, data);
+			log.error("Objective function created.");
+
+			// ==============================
+			// 1. Single allocation constraint
+			// ==============================
+			log.error("Adding single allocation constraints...");
+			addSingleAllocationConstraints(solver);
+			log.error("Added single allocation constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// 2. Link allocation constraints
+			// x[p][i][k] <= x[p][k][k]
+			// ==============================
+			log.error("Adding node allocation constraints...");
+			addNodeAllocationConstraints(solver);
+			log.error("Added node allocation constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// 3. Maximum products at hub
+			// sum_p x[k][k][p] <= L[k] * z[k]
+			// ==============================
+			log.error("Adding max products at hub constraints...");
+			addHubLimitProdConstraints(solver, data);
+			log.error("Added max products at hub constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// 4. Flow balance constraints
+			// ==============================
+			log.error("Adding flow balance constraints...");
+			addAssureFlowConstraints(solver, data);
+			log.error("Added flow balance constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// 5. Flow bounds
+			// y[p][i][k][l] <= O[i][p] * x[i][k][p] for l != k
+			// ==============================
+			log.error("Adding flow bounds constraints...");
+			addFlowThruHubConstraints(solver, data);
+			log.error("Added flow bounds constraints. Total constraints: {}", solver.numConstraints());
+
+			log.error("Adding flow no negative constraints...");
+			addNonNegativeFlowConstraints(solver);
+			log.error("Added flow no negative constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// 6. Capacity per hub
+			// sum_i O[i][p] * x[i][k][p] <= gamma[k][p] * x[k][k][p]
+			// ==============================
+			log.error("Adding capacity constraints...");
+			addCapacityConstraints(solver, data);
+			log.error("Added capacity constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// 7. Minimum hubs per product
+			// ==============================
+			log.error("Adding minimum hubs per product constraints...");
+			addMinimumHubsPerProdConstraints(solver, data);
+			log.error("Added minimum hubs per product constraints. Total constraints: {}", solver.numConstraints());
+
+			// ==============================
+			// Solve
+			// ==============================
+			log.error("Solving model with {} variables and {} constraints...", 
+					solver.numVariables(), solver.numConstraints());
+
+			MPSolver.ResultStatus resultStatus = solver.solve();
+
+			long endTime = System.nanoTime();
+			double runtimeSec = (endTime - startTime) / 1.0e9;
+
+			if (resultStatus == MPSolver.ResultStatus.OPTIMAL || resultStatus == MPSolver.ResultStatus.FEASIBLE) {
+				aco.scalingParameter = obj.value();
+
+				logSolution(solver, obj, runtimeSec);
+
+				// Copy solution to tau0 for ACO
+				for (int i = 0; i < this.nbNodes; i++) {
+					for (int j = 0; j < this.nbNodes; j++) {
+						for (int p = 0; p < this.nbProducts; p++) {
+							aco.tau0[p][i][j] = this.x[p][i][j].solutionValue();
+						}
+					}
+				}
+
+				try (PrintWriter writer = new PrintWriter(new FileWriter("history1.txt", true))) {
+					writer.println("HiGHS LR for TAU0 COMPUTED - Objective: " + obj.value() + ", Runtime: " + runtimeSec + "s");
+				}
+
+			} else {
+				log.warn("No solution found. Result status: {}", resultStatus);
+				try (PrintWriter writer = new PrintWriter(new FileWriter("history1.txt", true))) {
+					writer.println("HiGHS LR - No solution found. Status: " + resultStatus);
+				}
+			}
+
+		} catch (Exception e) {
+			log.error("Error during solver execution: {}", e.getMessage(), e);
+			try (PrintWriter err = new PrintWriter(new FileWriter("HiGHS_LR_ERROR.txt", true))) {
+				err.println("Error: " + e.getMessage());
+				e.printStackTrace(err);
+			} catch (Exception ex) {
+				log.error("Failed to write error log: {}", ex.getMessage(), ex);
+			}
+		}
 	}
 
-	private void createXVars(MPSolver solver, boolean isLinearRelaxation) {
+	private MPSolver createSolver() {
+		Loader.loadNativeLibraries();
+
+		// Create HiGHS solver
+		MPSolver solver = MPSolver.createSolver(solverId);
+		if (solver == null) {
+			log.error("{} solver unavailable.", solverId);
+			return null;
+		} else {
+			log.error("{} solver used.", solverId);
+		}
+		return solver;
+	}
+
+	private void createVars(MPSolver solver) {
+		this.createVars(solver, null);
+	}
+	
+	private void createVars(MPSolver solver, Solution sol) {
+		if(sol != null) {
+			createXVars(solver, sol.x);
+			createYVars(solver);
+			createZVars(solver, sol.z);
+		} else {
+			createXVars(solver);
+			createYVars(solver);
+			createZVars(solver);
+		}
+		
+	}
+	private void createXVars(MPSolver solver) {
+		this.createXVars(solver, null);
+	}
+	
+	private void createXVars(MPSolver solver, int[][][] solutionX) {
 		this.x = new MPVariable[this.nbProducts][this.nbNodes][this.nbNodes];
+		boolean forceSolution = solutionX != null;
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
-					if(isLinearRelaxation) {
+					if(this.isLinearRelaxation) {
 						this.x[p][i][j] = solver.makeNumVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
+					} else if (forceSolution) {
+						int fixedBound = solutionX[p][i][j];
+						this.x[p][i][j] = solver.makeIntVar(fixedBound, fixedBound , "x_" + p + "_" + i + "_" + j);
 					} else {
-						this.x[p][i][j] = solver.makeIntVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
+						this.x[p][i][j] = solver.makeIntVar(0, 1, "x_" + p + "_" + i + "_" + j);
 					}
-
 				}
 			}
 		}
@@ -217,11 +368,22 @@ public class MP_CSAHLP {
 			}
 		}
 	}
-
+	
 	private void createZVars(MPSolver solver) {
+		this.createZVars(solver, null);
+	}
+
+	private void createZVars(MPSolver solver, int[] solutionZ) {
 		this.z = new MPVariable[this.nbNodes];
+		boolean forceSolution = solutionZ != null;
 		for (int j = 0; j < this.nbNodes; j++) {
-			this.z[j] = solver.makeIntVar(0.0, 1.0, "z_" + j);
+			if(forceSolution) {
+				int fixedBound = solutionZ[j];
+				this.z[j] = solver.makeIntVar(fixedBound, fixedBound, "z_" + j);
+			} else {
+				this.z[j] = solver.makeIntVar(0, 1, "z_" + j);
+			}
+			
 		}
 	}
 

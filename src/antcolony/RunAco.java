@@ -353,11 +353,10 @@ public class RunAco {
 							}
 
 				itrt.best_cost=itrt.best_cost+inter_cost;
-				sol = GetSolutions.getSolution(dat,ants[kk], itrt);
+				sol = GetSolutions.getSolution(dat, ants[kk], itrt);
 
 				MP_CSAHLP milpSolver = new MP_CSAHLP(nbProducts, nbNodes, true);
-				aco = milpSolver.solve(dat);
-				// save y value TIRAR
+				milpSolver.solve(dat, aco, sol);
 				for (i = 0; i<dat.nbNodes; i++) 
 					for (j=0; j<dat.nbNodes; j++) 
 						for (k = 0 ; k < dat.nbNodes; k++) 
