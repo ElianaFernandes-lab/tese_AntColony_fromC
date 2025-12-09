@@ -16,6 +16,7 @@ import com.google.ortools.linearsolver.MPVariable;
 
 import antcolony.Aco;
 import antcolony.ReadData.Data;
+import antcolony.constants.AcoVar;
 
 public class MP_CSAHLP {
 
@@ -23,9 +24,11 @@ public class MP_CSAHLP {
 
 	private int nbProducts;
 	private int nbNodes;
-	
+
 	private boolean isLinearRelaxation = false;
 	
+	String solverId = AcoVar.SOLVER_ID;
+
 	MPVariable[][][] x;
 	MPVariable[][][][] y;
 	MPVariable[] z;
@@ -33,6 +36,13 @@ public class MP_CSAHLP {
 	public MP_CSAHLP(int nbProducts, int nbNodes, boolean isLinearRelaxation) {
 		this.nbProducts = nbProducts;
 		this.nbNodes = nbNodes;
+		this.isLinearRelaxation = isLinearRelaxation;
+	}
+	
+	public MP_CSAHLP(int nbProducts, int nbNodes, String solverId, boolean isLinearRelaxation) {
+		this.nbProducts = nbProducts;
+		this.nbNodes = nbNodes;
+		this.solverId = solverId;
 		this.isLinearRelaxation = isLinearRelaxation;
 	}
 
@@ -44,7 +54,6 @@ public class MP_CSAHLP {
 		long startTime = System.nanoTime();
 
 		// Create HiGHS solver
-		String solverId = "SCIP";//AcoVar.SOLVER_ID;
 		MPSolver solver = MPSolver.createSolver(solverId);
 		if (solver == null) {
 			log.error("{} solver unavailable.", solverId);
@@ -95,7 +104,7 @@ public class MP_CSAHLP {
 			// 4. Flow balance constraints
 			// ==============================
 			log.error("Adding flow balance constraints...");
-			addFlowBalanceConstraints(solver, data);
+			addAssureFlowConstraints(solver, data);
 			log.error("Added flow balance constraints. Total constraints: {}", solver.numConstraints());
 
 			// ==============================
@@ -103,9 +112,9 @@ public class MP_CSAHLP {
 			// y[p][i][k][l] <= O[i][p] * x[i][k][p] for l != k
 			// ==============================
 			log.error("Adding flow bounds constraints...");
-			addFlowBoundsConstraints(solver, data);
+			addFlowThruHubConstraints(solver, data);
 			log.error("Added flow bounds constraints. Total constraints: {}", solver.numConstraints());
-			
+
 			log.error("Adding flow no negative constraints...");
 			addNonNegativeFlowConstraints(solver);
 			log.error("Added flow no negative constraints. Total constraints: {}", solver.numConstraints());
@@ -137,8 +146,7 @@ public class MP_CSAHLP {
 			double runtimeSec = (endTime - startTime) / 1.0e9;
 
 			if (resultStatus == MPSolver.ResultStatus.OPTIMAL || resultStatus == MPSolver.ResultStatus.FEASIBLE) {
-				double sclPrm = obj.value();
-				double timeLR = runtimeSec;
+				aco.scalingParameter = obj.value();
 
 				logSolution(solver, obj, runtimeSec);
 
@@ -175,46 +183,6 @@ public class MP_CSAHLP {
 		return aco;
 	}
 
-	private void logSolution(MPSolver solver, MPObjective obj, double runtimeSec) {
-		log.error("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
-		logZ();
-		logX();
-		logY();
-		log.error("");
-		log.error("Objective value = {}", obj.value());
-		log.error("Problem solved in {} milliseconds", + solver.wallTime());
-		log.error("Problem solved in {} iterations", solver.iterations());
-		log.error("Problem solved in {} branch-and-bound nodes", solver.nodes());
-	}
-
-	private void logY() {
-		for (int p = 0; p < this.nbProducts; p++) {
-			for (int i = 0; i < this.nbNodes; i++) {
-				for (int k = 0; k < this.nbNodes; k++) {
-					for (int l = 0; l < this.nbNodes; l++) {
-						log.error("y[{}][{}][{}][{}] = {}", p, i, k, l, this.y[p][i][k][l].solutionValue());
-					}
-				}
-			}
-		}
-	}
-
-	private void logX() {
-		for (int p = 0; p < this.nbProducts; p++) {
-			for (int i = 0; i < this.nbNodes; i++) {
-				for (int j = 0; j < this.nbNodes; j++) {
-					log.error("x[{}][{}][{}] = {}", p, i, j, this.x[p][i][j].solutionValue());
-				}
-			}
-		}
-	}
-
-	private void logZ() {
-		for (int i = 0; i < this.nbNodes; ++i) {
-			log.error("z = [{}] = {}", i, this.z[i].solutionValue());
-		}
-	}
-
 	private void createVars(MPSolver solver, boolean isLinearRelaxation) {
 		createXVars(solver, isLinearRelaxation);
 		createYVars(solver);
@@ -231,7 +199,7 @@ public class MP_CSAHLP {
 					} else {
 						this.x[p][i][j] = solver.makeIntVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
 					}
-					
+
 				}
 			}
 		}
@@ -253,7 +221,7 @@ public class MP_CSAHLP {
 	private void createZVars(MPSolver solver) {
 		this.z = new MPVariable[this.nbNodes];
 		for (int j = 0; j < this.nbNodes; j++) {
-			this.z[j] = solver.makeNumVar(0.0, 1.0, "z_" + j);
+			this.z[j] = solver.makeIntVar(0.0, 1.0, "z_" + j);
 		}
 	}
 
@@ -303,7 +271,9 @@ public class MP_CSAHLP {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
-					double coeff = data.d[i][k] * ((data.chi[p] * data.originatedFlow[p][i]) + (data.delta[p] * data.destinedFlow[p][i]));
+					double collection = data.chi[p]   * data.originatedFlow[p][i];  
+					double distribution = data.delta[p] * data.destinedFlow[p][i];   
+					double coeff = data.d[i][k] * (collection + distribution);
 					obj.setCoefficient(this.x[p][i][k], coeff);
 				}
 			}
@@ -334,7 +304,7 @@ public class MP_CSAHLP {
 			for (int p = 0; p < this.nbProducts; p++) {
 				MPConstraint c = solver.makeConstraint(1.0, 1.0, "SA_" + i + "_" + p);
 
-				 // Sum x[i][k][p] over all k in K
+				// Sum x[i][k][p] over all k in K
 				for (int k = 0; k < this.nbNodes; k++) {
 					c.setCoefficient(this.x[p][i][k], 1.0);
 				}
@@ -353,8 +323,7 @@ public class MP_CSAHLP {
 					// Skip self-allocation: x[p][j][j] <= x[p][j][j] is trivial
 					if (i == j) continue;
 
-					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, 
-							"LA_" + p + "_" + i + "_" + j);
+					MPConstraint c = solver.makeConstraint(0.0, 0.0, "LA_" + p + "_" + i + "_" + j);
 
 					c.setCoefficient(this.x[p][i][j], 1.0);
 					c.setCoefficient(this.x[p][j][j], -1.0);
@@ -389,7 +358,7 @@ public class MP_CSAHLP {
 	 * @param solver
 	 * @param data
 	 */
-	private void addFlowBalanceConstraints(MPSolver solver, Data data) {
+	private void addAssureFlowConstraints(MPSolver solver, Data data) {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
@@ -405,14 +374,14 @@ public class MP_CSAHLP {
 					c.setCoefficient(this.x[p][i][k], -data.originatedFlow[p][i]);
 
 					for (int j = 0; j < this.nbNodes; j++) {
-						c.setCoefficient(this.x[p][i][k], data.w[p][i][j]);
+						c.setCoefficient(this.x[p][j][k], data.w[p][i][j]);
 					}
 				}
 			}
 		}
 	}
 
-	private void addFlowBoundsConstraints(MPSolver solver, Data data) {
+	private void addFlowThruHubConstraints(MPSolver solver, Data data) {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
@@ -429,7 +398,7 @@ public class MP_CSAHLP {
 			}
 		}
 	}
-	
+
 	private void addNonNegativeFlowConstraints(MPSolver solver) {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
@@ -514,6 +483,46 @@ public class MP_CSAHLP {
 			}
 
 			log.debug("Product {} requires minimum {} hubs to cover demand {}", p, r, prodDemand);
+		}
+	}
+
+	private void logSolution(MPSolver solver, MPObjective obj, double runtimeSec) {
+		log.error("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
+		logZ();
+		logX();
+		logY();
+		log.error("");
+		log.error("Objective value = {}", obj.value());
+		log.error("Problem solved in {} milliseconds", + solver.wallTime());
+		log.error("Problem solved in {} iterations", solver.iterations());
+		log.error("Problem solved in {} branch-and-bound nodes", solver.nodes());
+	}
+
+	private void logY() {
+		for (int p = 0; p < this.nbProducts; p++) {
+			for (int i = 0; i < this.nbNodes; i++) {
+				for (int k = 0; k < this.nbNodes; k++) {
+					for (int l = 0; l < this.nbNodes; l++) {
+						log.error("y[{}][{}][{}][{}] = {}", p, i, k, l, this.y[p][i][k][l].solutionValue());
+					}
+				}
+			}
+		}
+	}
+
+	private void logX() {
+		for (int p = 0; p < this.nbProducts; p++) {
+			for (int i = 0; i < this.nbNodes; i++) {
+				for (int j = 0; j < this.nbNodes; j++) {
+					log.error("x[{}][{}][{}] = {}", p, i, j, this.x[p][i][j].solutionValue());
+				}
+			}
+		}
+	}
+
+	private void logZ() {
+		for (int i = 0; i < this.nbNodes; ++i) {
+			log.error("z = [{}] = {}", i, this.z[i].solutionValue());
 		}
 	}
 }

@@ -11,6 +11,8 @@ public class Aco {
 
     // CURRENT PHEROMONE TRAIL: tau[i][j][p]
     public double[][][] tau;
+    
+    public double scalingParameter;
 
     public Aco(int nProducts, int nNodes) {
         this.tau0 = new double[nProducts][nNodes][nNodes];

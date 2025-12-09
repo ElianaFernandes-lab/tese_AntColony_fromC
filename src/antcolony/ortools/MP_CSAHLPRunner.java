@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 
 import antcolony.ReadData;
 import antcolony.ReadData.Data;
-import antcolony.constants.AcoVar;
 
 public class MP_CSAHLPRunner {
 
