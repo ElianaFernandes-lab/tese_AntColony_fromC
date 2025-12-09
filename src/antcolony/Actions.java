@@ -1,18 +1,9 @@
 package antcolony;
 
-/**
- * Actions.java
- * Translated from actions.cpp + actions.h
- * Original by Eliana Fernandes
- * Copyright (c) 2015 Eliana Fernandes. All rights reserved.
- */
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import aco.utils.DeepCopyArray;
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
 
@@ -225,21 +216,14 @@ public class Actions {
 	// =====================================================================
 	// 8. Update iteration-best ant
 	// =====================================================================
-	public static int getBestAntCost(int nr_prods, int nr_nodes, Ant ant, Iteration iter, int it, int k) {
+	public static void getBestAntCost(int nr_prods, int nr_nodes, Ant ant, Iteration iter, int it, int k) {
 		if (ant.cost <= iter.best_cost) {
 			iter.best_cost = ant.cost;
 			iter.best_ant = k;
 
-			// Copy allocation
-			for (int p = 0; p < nr_prods; p++) {
-				for (int i = 0; i < nr_nodes; i++) {
-					iter.x_best[p][i] = ant.x[p][i];
-				}
-			}
-			// Copy hub openings
-			System.arraycopy(ant.z, 0, iter.z_best, 0, nr_nodes);
+			iter.x_best = DeepCopyArray.deepCopy(ant.x);
+			iter.z_best = DeepCopyArray.deepCopy(ant.z);
 		}
-		return 0;
 	}
 
 	// =====================================================================

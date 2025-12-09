@@ -291,10 +291,10 @@ public class RunAco {
 						break;
 					}// if(sum_available==0 && sum_remaining>0)
 					///////// ///////// ////     END COMPUTE SUM AVAILABLE           ///// ///////// /////////
-				} while(sum_available>0);
+				} while(sum_available > 0);
 
 				/// BEST ANT COST
-				if(ants[k].life>0)
+				if(ants[k].life > 0)
 					Actions.getBestAntCost(dat.nbProducts,dat.nbNodes, ants[k], itrt, it,k);
 			}//for(k = 0 ;k<AcoVar.NR_ANTS;k++)
 			///////// ///////// ///////// //////            END COLONY LOOP               ///////// ///////// ///////// /////////
@@ -308,7 +308,10 @@ public class RunAco {
 				///////// CLOSE HUB WITH ONE CONNECTION
 				if (AcoVar.CLOSE) {
 					for(i = 0;i<dat.nbNodes;i++) {
-						CloseHub.closeHub(dat, ants[kk], itrt, max_cost);
+						boolean success = CloseHub.closeHub(dat, ants[kk], itrt, max_cost);
+						if(!success) {
+							break;
+						}
 					}
 				}
 
