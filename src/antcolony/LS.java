@@ -267,7 +267,7 @@ public class LS {
                 if (flag_avail_node > 0 && flag_avail_hub > 0) {
                     if (AcoVar.LSSHIST) {
                         logToFile("to dedicated hub " + new_hub);
-                        logToFile("cap(" + new_hub + "," + prod + "): " + ants.avail_cap[new_hub][prod] + " >= " + dados.originatedFlow[prod][node] + " : flux(" + node + ") ?");
+                        logToFile("cap(" + new_hub + "," + prod + "): " + ants.avail_cap[prod][new_hub] + " >= " + dados.originatedFlow[prod][node] + " : flux(" + node + ") ?");
                     }
                     
                     // Calculate cost difference for Relocate Node move

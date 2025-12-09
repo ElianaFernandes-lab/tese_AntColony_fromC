@@ -70,7 +70,7 @@ public class LocalSearch {
 
                     if (new_hub != hub &&
                         iter.z_best[new_hub] == 1 &&
-                        ants.avail_cap[new_hub][prod] >= dados.originatedFlow[prod][node] &&
+                        ants.avail_cap[prod][new_hub] >= dados.originatedFlow[prod][node] &&
                         iter.x_best[prod][new_hub] == new_hub) {  // new_hub is a hub for prod
 
                         logLS("x_best[" + new_hub + "][" + prod + "]= " + new_hub + " is hub.");
@@ -106,7 +106,7 @@ public class LocalSearch {
 
                 // Update capacities
                 ants.avail_cap[prod][hub] += dados.originatedFlow[prod][node];
-                ants.avail_cap[new_hub][prod] -= dados.originatedFlow[prod][node];
+                ants.avail_cap[prod][new_hub] -= dados.originatedFlow[prod][node];
 
                 first_admissible = 2;
                 ls_iter++;
