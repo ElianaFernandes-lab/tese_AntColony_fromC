@@ -210,7 +210,7 @@ public class CloseHub {
 
 				// Update capacities
 				ants.avail_cap[prod][hub] += dados.originatedFlow[prod][hub];     // free up old
-				ants.avail_cap[new_hub][prod] -= dados.originatedFlow[prod][hub]; // consume in new
+				ants.avail_cap[prod][new_hub] -= dados.originatedFlow[prod][hub]; // consume in new
 				if(PRINT_LOGS) {
 					log.error("Reassignment done: x[{},{},{}]", hub, new_hub, prod);
 					log.error("New best_cost = {}", iter.best_cost);

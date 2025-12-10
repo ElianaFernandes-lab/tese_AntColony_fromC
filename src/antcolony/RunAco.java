@@ -11,13 +11,13 @@ import org.apache.logging.log4j.Logger;
 
 public class RunAco {
 
-	
+
 	private static final Logger log = LogManager.getLogger(RunAco.class);
-	
+
 	protected static final double MAX_COST = 1e10;
 	private static final String BEST_LOG = "best.txt";
 	private static final String GAP_IN = "out_best.txt";
-	
+
 	public static void runAco(Data dat, String fichIn, String fichOut) {
 		log.info("START RUN ACO - {}", fichIn);
 
@@ -138,7 +138,7 @@ public class RunAco {
 				ants[k].cost=0.0; // the cost of ant solution is intialized to zero
 			}
 
-			
+
 
 			// SOLUTION BEST COMPONENTS (x(i,j,iter) ----->  initialized to -1 because it can take value 0)
 			for(p = 0;p < dat.nbProducts;p++)
@@ -318,7 +318,10 @@ public class RunAco {
 				///////// CLOSE RANDOM HUB
 				if (AcoVar.CRH) {
 					for(i = 0;i<dat.nbNodes;i++) {
-						CloseRandomHub.closeRandomHub(dat, ants[kk], itrt, max_cost);
+						boolean success = CloseRandomHub.closeRandomHub(dat, ants[kk], itrt, max_cost);
+						if(!success) {
+							break;
+						}
 					}
 				}
 				///////// LOCAL SEARCH RANDOM RELOCATE RANDOM NODE
@@ -344,64 +347,73 @@ public class RunAco {
 				for (p = 0; p < dat.nbProducts; p++)
 					for (i = 0; i<dat.nbNodes; i++)
 						for (j=0; j<dat.nbNodes; j++)
-							if(sl.inter_x[i][j][p]>0){
-								estimate_d=estimate_d+sl.inter_x[i][j][p]*dat.d[i][j];
+							if(sl.inter_x[p][i][j]>0){
+								estimate_d=estimate_d+sl.inter_x[p][i][j]*dat.d[i][j];
 							}
 
 				for(p = 0;p < dat.nbProducts;p++)
 					for(i = 0;i<dat.nbNodes;i++)
 						for(j=0;j<dat.nbNodes;j++)
-							if(sl.inter_x[i][j][p]>0){
+							if(sl.inter_x[p][i][j]>0){
 								inter_cost+=dat.alpha[p]*dat.originatedFlow[p][i]*sl.inter_x[i][j][p]*estimate_d/sl.count_inter;
 							}
 
 				itrt.best_cost=itrt.best_cost+inter_cost;
 				sol = GetSolutions.getSolution(dat, ants[kk], itrt);
 
-				MP_CSAHLP milpSolver = new MP_CSAHLP(nbProducts, nbNodes, true);
-				milpSolver.solve(dat, aco, sol);
-				for (i = 0; i<dat.nbNodes; i++) 
-					for (j=0; j<dat.nbNodes; j++) 
-						for (k = 0 ; k < dat.nbNodes; k++) 
-							for(p = 0; p < dat.nbProducts; p++){ 
-								itrt.y_best[p][i][j][k]=sol.y[p][i][j][k];
-								if(itrt.best_cost<=better.cost)
-									better.y[p][i][j][k]=sol.y[p][i][j][k];
-							}
+				MP_CSAHLP milpSolver = new MP_CSAHLP(nbProducts, nbNodes, false);
+				boolean success = milpSolver.solve(dat, aco, sol);
+				if(success) {
+					for (i = 0; i<dat.nbNodes; i++) 
+						for (j=0; j<dat.nbNodes; j++) 
+							for (k = 0 ; k < dat.nbNodes; k++) 
+								for(p = 0; p < dat.nbProducts; p++){ 
+									itrt.y_best[p][i][j][k]=sol.y[p][i][j][k];
+									if(itrt.best_cost<=better.cost)
+										better.y[p][i][j][k]=sol.y[p][i][j][k];
+								}
 
-				////////// GLOBAL PHEROMONE UPDATING
-				// global pheromone update
-				//NEW
-				if (AcoVar.UPDATE_BEST) {
-					if(it>1){
-						if(itrt.best_cost<global_best+global_best*AcoVar.UPDATE_PARAM)
-							//if(itrt.best_cost<iter[it-1].best_cost)
+					////////// GLOBAL PHEROMONE UPDATING
+					// global pheromone update
+					//NEW
+					if (AcoVar.UPDATE_BEST) {
+						if(it>1){
+							if(itrt.best_cost<global_best+global_best*AcoVar.UPDATE_PARAM)
+								//if(itrt.best_cost<iter[it-1].best_cost)
+								Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
+						}
+						else{
 							Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
-					}
-					else{
+						}
+					} else {
 						Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
 					}
+					if(itrt.best_cost>=global_best){
+						best_count++;
+					} else {
+						best_count=0;
+					}
+					/*	if (it>1)
+							if(itrt.best_cost<iter[it-1].best_cost)
+						if(best_count>100)
+									best_count=best_count-10;*/
+					if(best_count> AcoVar.MAX_NO_BEST)
+						it_stop=1;
+
+
+					if(startTime - System.currentTimeMillis() > AcoVar.MAX_TIME * 1000){
+						it_stop=1;
+					}
+
+					nr_dead=0;
 				} else {
-					Actions.globalPheromoneUpdate(dat,aco,itrt,scalParam);
-				}
-				if(itrt.best_cost>=global_best){
-					best_count++;
-				} else {
-					best_count=0;
-				}
-				/*	if (it>1)
-						if(itrt.best_cost<iter[it-1].best_cost)
-					if(best_count>100)
-								best_count=best_count-10;*/
-				if(best_count> AcoVar.MAX_NO_BEST)
-					it_stop=1;
-
-
-				if(startTime - System.currentTimeMillis() > AcoVar.MAX_TIME * 1000){
-					it_stop=1;
+					/// count dead ants in a row
+					nr_dead++;
+					if(AcoVar.UPDATE_DEAD && nr_dead > AcoVar.MAX_DEAD){
+						Actions.globalDeadPheromoneUpdate(dat,aco,ants[kk] ,scalParam, global_best);
+					}
 				}
 
-				nr_dead=0;
 			} else { //if(ants[kk].life>0)
 
 				/// count dead ants in a row

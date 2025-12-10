@@ -8,12 +8,14 @@ package antcolony;
  */
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import antcolony.constants.AcoVar;
+import antcolony.utils.ArrayUtils;
 
 public class ReadData {
 	
@@ -24,7 +26,7 @@ public class ReadData {
      */
     public static class Data {
     	
-        public int nbNodes = 0;
+		public int nbNodes = 0;
         public int nbProducts = 0;
         public double[][][] w;  // w[p][i][j] = flow from i to j for product p
         public double[][] d;    // d[i][j] = distance between i and j
@@ -54,6 +56,15 @@ public class ReadData {
             originatedFlow = new double[nbProducts][nbNodes];
             destinedFlow = new double[nbProducts][nbNodes];
         }
+        
+        @Override
+      		public String toString() {
+      			return "Data [nbNodes=" + nbNodes + ", nbProducts=" + nbProducts + ", w=" + ArrayUtils.arrayToString(w) + ", d="
+      					+ ArrayUtils.arrayToString(d) + ", g=" + ArrayUtils.arrayToString(g) + ", f=" + ArrayUtils.arrayToString(f) + ", gamma="
+      					+ ArrayUtils.arrayToString(gamma) + ", L=" + ArrayUtils.arrayToString(L) + ", chi=" + ArrayUtils.arrayToString(chi)
+      					+ ", delta=" + ArrayUtils.arrayToString(delta) + ", alpha=" + ArrayUtils.arrayToString(alpha) + ", originatedFlow="
+      					+ ArrayUtils.arrayToString(originatedFlow) + ", destinedFlow=" + ArrayUtils.arrayToString(destinedFlow) + "]";
+      		}
     }
 
     /**

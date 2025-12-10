@@ -54,7 +54,7 @@ public class AcoVar {
 	public static final boolean UPDATE_BEST = true;
 	public static final double UPDATE_PARAM = 0.2;   // 0 for update only if best
 
-	public static final int NR_ITER = 5000;          // 100000 in some versions
+	public static final int NR_ITER = 100;//5000;          // 100000 in some versions
 	public static final int MAX_NO_BEST = NR_ITER / 10;
 	public static final int MAX_TIME = 360;          // seconds
 	public static final int NR_ANTS = 10;

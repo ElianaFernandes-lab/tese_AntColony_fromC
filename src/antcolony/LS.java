@@ -287,7 +287,7 @@ public class LS {
                     if (cost_plus - cost_subtract < 0 /* && ants.avail_cap[prod][hub] > dados.O[node][prod] */) {
                         
                         // Perform Relocation (Move is accepted)
-                        iter.x_best[node][prod] = new_hub;
+                        iter.x_best[prod][node] = new_hub;
                         compare_cost = iter.best_cost;
                         iter.best_cost = compare_cost + cost_plus - cost_subtract;
                         
@@ -295,7 +295,7 @@ public class LS {
                         
                         // Update capacities
                         ants.avail_cap[prod][hub] = ants.avail_cap[prod][hub] + dados.originatedFlow[prod][node];
-                        ants.avail_cap[new_hub][prod] = ants.avail_cap[new_hub][prod] - dados.originatedFlow[prod][node];
+                        ants.avail_cap[prod][new_hub] = ants.avail_cap[prod][new_hub] - dados.originatedFlow[prod][node];
                         
                         first_admissible = 2; // Stop after the first admissible (improving) move
                     } else {

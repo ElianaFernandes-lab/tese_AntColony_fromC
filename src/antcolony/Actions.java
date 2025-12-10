@@ -264,7 +264,7 @@ public class Actions {
 					log.error("Error: j = -1 in global update");
 					continue;
 				}
-				double oldTau = a.tau[i][j][p];
+				double oldTau = a.tau[p][i][j];
 				a.tau[p][i][j] = (1 - AcoVar.GAMMA) * oldTau +
 						scl_prm * AcoVar.SCALING_PARAMETER * AcoVar.GAMMA * (1.0 / iter.best_cost);
 			}

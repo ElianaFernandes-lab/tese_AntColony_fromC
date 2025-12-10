@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import antcolony.ReadData.Data;
 import antcolony.constants.AcoVar;
-import antcolony.utils.DeepCopyArray;
+import antcolony.utils.ArrayUtils;
 
 public class CloseRandomHub {
 
@@ -36,10 +36,10 @@ public class CloseRandomHub {
 		Counters nr = Counting.countAll(dados.nbProducts, dados.nbNodes, iter);
 
 		// Temporary solution and capacities (to test move without committing)
-		double[][] temp_cap =  DeepCopyArray.deepCopy(ants.avail_cap);
+		double[][] temp_cap = ArrayUtils.deepCopy(ants.avail_cap);
 
 		// Deep copy current best solution
-		int[][] x_temp = DeepCopyArray.deepCopy(iter.x_best);
+		int[][] x_temp = ArrayUtils.deepCopy(iter.x_best);
 
 		double temp_cost = iter.best_cost;
 		double hub_cost_to_save = 0.0;
@@ -71,7 +71,7 @@ public class CloseRandomHub {
 		// Determine fixed cost savings
 		if (nr.pprods[hub_to_close] == 1) {
 			hub_cost_to_save = dados.f[prod][hub_to_close] + dados.g[hub_to_close];
-			log.error("This is the last product → full hub closure saves g[" + hub_to_close + "] + f");
+			log.error("This is the last product → full hub closure saves {}.", hub_cost_to_save);
 		} else {
 			hub_cost_to_save = dados.f[prod][hub_to_close];
 			log.error("Only product-specific fixed cost f[" + hub_to_close + "][" + prod + "] saved");
@@ -121,7 +121,7 @@ public class CloseRandomHub {
 			int bestHub = -1;
 			for (int h : candidateHubs) {
 				if (temp_cap[prod][h] > bestCap) {
-					bestCap = temp_cap[h][prod];
+					bestCap = temp_cap[prod][h];
 					bestHub = h;
 				}
 			}
@@ -134,9 +134,9 @@ public class CloseRandomHub {
 
 			// Compute cost change
 			double oldDistCost = dados.d[nodeToMove][hub_to_close] *
-					(dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
+					(dados.chi[prod] * dados.originatedFlow[prod][nodeToMove] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
 			double newDistCost = dados.d[nodeToMove][bestHub] *
-					(dados.chi[prod] * dados.originatedFlow[nodeToMove][prod] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
+					(dados.chi[prod] * dados.originatedFlow[prod][nodeToMove] + dados.delta[prod] * dados.destinedFlow[prod][nodeToMove]);
 
 			double deltaCost = newDistCost - oldDistCost;
 			temp_cost += deltaCost;
@@ -148,8 +148,8 @@ public class CloseRandomHub {
 
 			// Apply relocation
 			x_temp[prod][nodeToMove] = bestHub;
-			temp_cap[bestHub][prod] -= maxFlow;
-			temp_cap[hub_to_close][prod] += maxFlow;
+			temp_cap[prod][bestHub] -= maxFlow;
+			temp_cap[prod][hub_to_close] += maxFlow;
 
 			nodesToRelocate.remove(Integer.valueOf(nodeToMove));
 		}
@@ -170,7 +170,7 @@ public class CloseRandomHub {
 				}
 				for (int j = 0; j < dados.nbNodes; j++) {
 					for (int p = 0; p < dados.nbProducts; p++) {
-						ants.avail_cap[p][j] = temp_cap[j][p];
+						ants.avail_cap[p][j] = temp_cap[p][j];
 					}
 				}
 

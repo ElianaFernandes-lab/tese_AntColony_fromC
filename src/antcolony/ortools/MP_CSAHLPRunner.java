@@ -16,7 +16,7 @@ public class MP_CSAHLPRunner {
 		String fileIn;
 		// List of instances to run (from the repeated blocks in original)
 		String[] instances = {
-				"AP10LL_1_1.dat"
+				"AP10TT_1_1.dat"
 				//			, "AP10TT_2_1.dat", "AP10TT_2_2.dat", "AP10TT_3_1.dat", "AP10TT_3_2.dat", "AP10TT_3_3.dat",
 				//			"AP10TL_1_1.dat", "AP10TL_2_1.dat", "AP10TL_2_2.dat", "AP10TL_3_1.dat", "AP10TL_3_2.dat", "AP10TL_3_3.dat",
 				//			"AP10LL_1_1.dat", "AP10LL_2_1.dat", "AP10LL_2_2.dat", "AP10LL_3_1.dat", "AP10LL_3_2.dat", "AP10LL_3_3.dat",
@@ -29,12 +29,12 @@ public class MP_CSAHLPRunner {
 
 
 			// Read data from file
-			Data dat = ReadData.readData(fileIn);
+			Data data = ReadData.readData(fileIn);
 
 			log.info("COMPUTING MILP");
 			try {
-				MP_CSAHLP solver = new MP_CSAHLP(dat.nbProducts, dat.nbNodes, false);
-				solver.solve(dat);
+				MP_CSAHLP solver = new MP_CSAHLP(data.nbProducts, data.nbNodes, false);
+				solver.solve(data);
 			} catch (Exception e) {
 				log.error("Error while running MILP");
 				e.printStackTrace();
