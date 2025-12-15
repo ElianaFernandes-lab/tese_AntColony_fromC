@@ -1,59 +1,64 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-  <groupId>tese_AntColony_fromC</groupId>
-  <artifactId>tese_AntColony_fromC</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+	<groupId>tese_AntColony_fromC</groupId>
+	<artifactId>tese_AntColony_fromC</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 
-  <!-- ADD YOUR DEPENDENCIES HERE -->
-  <dependencies>
-    <!-- Google OR-Tools Java -->
-    <dependency>
-        <groupId>com.google.ortools</groupId>
-        <artifactId>ortools-java</artifactId>
-        <version>9.14.6206</version>
-    </dependency>
-    
-    <!-- Log4j 2 dependency -->
-    <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
-        <version>2.20.0</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-api</artifactId>
-        <version>2.20.0</version>
-    </dependency>
+	<!-- ADD YOUR DEPENDENCIES HERE -->
+	<dependencies>
+		<!-- Google OR-Tools Java -->
+		<dependency>
+			<groupId>com.google.ortools</groupId>
+			<artifactId>ortools-java</artifactId>
+			<version>9.14.6206</version>
+		</dependency>
 
-  </dependencies>
+		<!-- Log4j 2 dependency -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>2.0.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j2-impl</artifactId>
+			<version>2.22.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.22.1</version>
+		</dependency>
+
+	</dependencies>
 
 
-  <build>
-    <sourceDirectory>src</sourceDirectory>
+	<build>
+		<sourceDirectory>src</sourceDirectory>
 
-    <resources>
-      <resource>
-        <directory>src</directory>
-        <excludes>
-          <exclude>**/*.java</exclude>
-        </excludes>
-      </resource>
-    </resources>
+		<resources>
+			<resource>
+				<directory>src</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</resource>
+		</resources>
 
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
-        <configuration>
-          <release>21</release>
-        </configuration>
-      </plugin>
-    </plugins>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<release>21</release>
+				</configuration>
+			</plugin>
+		</plugins>
 
-  </build>
+	</build>
 
 </project>
