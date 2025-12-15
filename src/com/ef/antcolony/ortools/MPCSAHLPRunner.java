@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 import com.ef.antcolony.ReadData;
 import com.ef.antcolony.ReadData.Data;
 
-public class MP_CSAHLPRunner {
+public class MPCSAHLPRunner {
 
-	private static final Logger log = LoggerFactory.getLogger(MP_CSAHLPRunner.class);
+	private static final Logger log = LoggerFactory.getLogger(MPCSAHLPRunner.class);
 
 
 	public static void main(String[] args) {
@@ -32,7 +32,7 @@ public class MP_CSAHLPRunner {
 
 			log.info("COMPUTING MILP");
 			try {
-				MP_CSAHLP solver = new MP_CSAHLP(data.nbProducts, data.nbNodes, false);
+				MPCSAHLP solver = new MPCSAHLP(data.nbProducts, data.nbNodes, false);
 				solver.solve(data);
 			} catch (Exception e) {
 				log.error("Error while running MILP");

@@ -18,7 +18,7 @@ import com.google.ortools.linearsolver.MPObjective;
 import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
 
-public class MP_CSAHLP {
+public class MPCSAHLP {
 
 	private static final String S_S = "%s_%s";
 	private static final String S_S_S = "%s_%s_%s";
@@ -30,7 +30,7 @@ public class MP_CSAHLP {
 	private static final String SINGLE_ALLOCATION_CSTRNT_NAME = "SA";
 	private static final String FLOW_DIVERGENCE_CSTRNT_NAME = "FD";
 
-	private static final Logger log = LoggerFactory.getLogger(MP_CSAHLP.class);
+	private static final Logger log = LoggerFactory.getLogger(MPCSAHLP.class);
 
 	private int nbProducts;
 	private int nbNodes;
@@ -44,13 +44,13 @@ public class MP_CSAHLP {
 	MPVariable[][][][] y;
 	MPVariable[] z;
 
-	public MP_CSAHLP(int nbProducts, int nbNodes, boolean isLinearRelaxation) {
+	public MPCSAHLP(int nbProducts, int nbNodes, boolean isLinearRelaxation) {
 		this.nbProducts = nbProducts;
 		this.nbNodes = nbNodes;
 		this.isLinearRelaxation = isLinearRelaxation;
 	}
 
-	public MP_CSAHLP(int nbProducts, int nbNodes, String solverId, boolean isLinearRelaxation) {
+	public MPCSAHLP(int nbProducts, int nbNodes, String solverId, boolean isLinearRelaxation) {
 		this.nbProducts = nbProducts;
 		this.nbNodes = nbNodes;
 		this.solverId = solverId;
