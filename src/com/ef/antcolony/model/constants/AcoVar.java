@@ -26,7 +26,7 @@ public class AcoVar {
 	public static final boolean LSHIST = true;
 	public static final boolean HISTORY = true;
 	public static final boolean BAHIST = true;
-	public static final boolean DAT_HIST = true;
+	public static final boolean LOG_DATA = false;
 	public static final boolean TAU_HIST = true;
 
 	public static final boolean LSS = true;

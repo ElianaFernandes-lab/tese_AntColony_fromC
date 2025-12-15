@@ -139,7 +139,7 @@ public class ReadData {
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
                     dados.gamma[p][i] = scanner.nextDouble();
-                    if (AcoVar.DAT_HIST && log.isInfoEnabled()) {
+                    if (AcoVar.LOG_DATA && log.isInfoEnabled()) {
                     	log.info("dados.Gamma[{}][{}] = {}", i, p, dados.gamma[p][i]);
                     }
                 }
@@ -168,7 +168,7 @@ public class ReadData {
                     for (int j = 0; j < nbNodes; j++) {
                         dados.originatedFlow[p][i] += dados.w[p][i][j];
                     }
-                    if (AcoVar.DAT_HIST && log.isInfoEnabled()) {
+                    if (AcoVar.LOG_DATA && log.isInfoEnabled()) {
                     	log.info("dados.O[{}][{}]= {}" , i, p, dados.originatedFlow[p][i]);
                     }
                     
