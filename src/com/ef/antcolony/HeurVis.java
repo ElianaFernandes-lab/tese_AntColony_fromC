@@ -1,8 +1,8 @@
 package com.ef.antcolony;
 
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ef.antcolony.ReadData.Data;
 import com.ef.antcolony.model.constants.AcoVar;
@@ -15,7 +15,7 @@ import com.ef.antcolony.model.constants.AcoVar;
  */
 public class HeurVis {
 	
-	private static final Logger log = LogManager.getLogger(HeurVis.class);
+	private static final Logger log = LoggerFactory.getLogger(HeurVis.class);
 	
     public double[][] totalFlowCost;    // Total Flow Cost if node i is the only hub for product p
     public double[][] hubFixedCost;    // Hub Fixed Cost (f[p][i] + g[i])

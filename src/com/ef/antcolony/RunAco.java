@@ -1,7 +1,7 @@
 package com.ef.antcolony;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ef.antcolony.GetSolutions.Solution;
 import com.ef.antcolony.GetSolutions.SolutionX;
@@ -12,7 +12,7 @@ import com.ef.antcolony.ortools.MP_CSAHLP;
 public class RunAco {
 
 
-	private static final Logger log = LogManager.getLogger(RunAco.class);
+	private static final Logger log = LoggerFactory.getLogger(RunAco.class);
 
 	protected static final double MAX_COST = 1e10;
 	private static final String BEST_LOG = "best.txt";

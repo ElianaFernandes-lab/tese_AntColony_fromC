@@ -8,18 +8,17 @@ package com.ef.antcolony;
  */
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
 import java.util.Scanner;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ef.antcolony.model.constants.AcoVar;
 import com.ef.antcolony.utils.ArrayUtils;
 
 public class ReadData {
 	
-	private static final Logger log = LogManager.getLogger(ReadData.class);
+	private static final Logger log = LoggerFactory.getLogger(ReadData.class);
 
     /**
      * Data structure holding the problem instance
@@ -140,8 +139,8 @@ public class ReadData {
             for (int i = 0; i < nbNodes; i++) {
                 for (int p = 0; p < nbProducts; p++) {
                     dados.gamma[p][i] = scanner.nextDouble();
-                    if (AcoVar.DAT_HIST) {
-                    	log.info("dados.Gamma[{}][{}]= " +i, p,  dados.gamma[p][i]);
+                    if (AcoVar.DAT_HIST && log.isInfoEnabled()) {
+                    	log.info("dados.Gamma[{}][{}] = {}", i, p, dados.gamma[p][i]);
                     }
                 }
             }
@@ -169,8 +168,8 @@ public class ReadData {
                     for (int j = 0; j < nbNodes; j++) {
                         dados.originatedFlow[p][i] += dados.w[p][i][j];
                     }
-                    if (AcoVar.DAT_HIST) {
-                    	log.info("dados.O[{}][{}]= " ,i,p, dados.originatedFlow[p][i]);
+                    if (AcoVar.DAT_HIST && log.isInfoEnabled()) {
+                    	log.info("dados.O[{}][{}]= {}" , i, p, dados.originatedFlow[p][i]);
                     }
                     
                 }

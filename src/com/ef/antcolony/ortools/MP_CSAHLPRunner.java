@@ -1,14 +1,14 @@
 package com.ef.antcolony.ortools;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ef.antcolony.ReadData;
 import com.ef.antcolony.ReadData.Data;
 
 public class MP_CSAHLPRunner {
 
-	private static final Logger log = LogManager.getLogger(MP_CSAHLPRunner.class);
+	private static final Logger log = LoggerFactory.getLogger(MP_CSAHLPRunner.class);
 
 
 	public static void main(String[] args) {
@@ -38,7 +38,7 @@ public class MP_CSAHLPRunner {
 				log.error("Error while running MILP");
 				e.printStackTrace();
 			}  // You need to implement this
-			log.error("FINISHED COMPUTING MILP");
+			log.info("FINISHED COMPUTING MILP");
 		}
 	}
 }

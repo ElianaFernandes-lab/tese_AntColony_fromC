@@ -5,8 +5,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ef.antcolony.Aco;
 import com.ef.antcolony.GetSolutions.Solution;
@@ -30,7 +30,7 @@ public class MP_CSAHLP {
 	private static final String SINGLE_ALLOCATION_CSTRNT_NAME = "SA";
 	private static final String FLOW_DIVERGENCE_CSTRNT_NAME = "FD";
 
-	private static final Logger log = LogManager.getLogger(MP_CSAHLP.class);
+	private static final Logger log = LoggerFactory.getLogger(MP_CSAHLP.class);
 
 	private int nbProducts;
 	private int nbNodes;
@@ -77,19 +77,18 @@ public class MP_CSAHLP {
 			createVars(solver);
 			log.info("Variables created. Total variables: {}", solver.numVariables());
 
-			log.error("Creating constraints ...");
+			log.info("Creating constraints ...");
 			createConstraints(data, solver);
-			log.error("Constraints created.");
+			log.info("Constraints created.");
 
-			log.error("Creating objective function...");
+			log.info("Creating objective function...");
 			MPObjective obj = createObjectiveFunction(solver, data);
-			log.error("Objective function created.");
+			log.info("Objective function created.");
 
 			// ==============================
 			// Solve
 			// ==============================
-			log.error("Solving model with {} variables and {} constraints...", 
-					solver.numVariables(), solver.numConstraints());
+			log.info("Solving model with {} variables and {} constraints...",  solver.numVariables(), solver.numConstraints());
 
 			MPSolver.ResultStatus resultStatus = solver.solve();
 
@@ -270,9 +269,9 @@ public class MP_CSAHLP {
 		// ==============================
 		// Enhancements
 		// ==============================
-		//		log.error("Adding minimum hubs per product constraints...");
-		//		addMinimumHubsPerProdConstraints(solver, data);
-		//		log.error("Added minimum hubs per product constraints. Total constraints: {}", solver.numConstraints());
+		log.error("Adding minimum hubs per product constraints...");
+		addMinimumHubsPerProdConstraints(solver, data);
+		log.error("Added minimum hubs per product constraints. Total constraints: {}", solver.numConstraints());
 	}
 
 	private MPSolver createSolver() {
@@ -349,12 +348,16 @@ public class MP_CSAHLP {
 		this.z = new MPVariable[this.nbNodes];
 		for (int j = 0; j < this.nbNodes; j++) {
 			if(this.isForcingSolution) {
-				double fixedBound = solutionZ[j];
-				this.z[j] = solver.makeIntVar(fixedBound, fixedBound, "z_" + j);
+				if(solutionZ != null) {
+					double fixedBound = solutionZ[j];
+					this.z[j] = solver.makeIntVar(fixedBound, fixedBound, "z_" + j);
+				} else {
+					log.error("isForcingSolution and solutionZ is null");
+				}
+				
 			} else {
 				this.z[j] = solver.makeBoolVar("z_" + j);
 			}
-
 		}
 	}
 
@@ -612,16 +615,16 @@ public class MP_CSAHLP {
 	}
 
 	private void logSolution(MPSolver solver, MPObjective obj, double runtimeSec) {
-		log.error("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
+		log.info("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
 		logZ();
 		logX();
 		logY();
-		log.error("Objective value = {}", obj.value());
-		log.error("Problem solved in {} milliseconds", + solver.wallTime());
-		log.error("Problem solved in {} iterations", solver.iterations());
-		log.error("Problem solved in {} branch-and-bound nodes", solver.nodes());
-		//		String lpFormat = solver.exportModelAsLpFormat(false);
-		//		log.error("Model in LP format:\n{}", lpFormat);
+		log.info("Objective value = {}", obj.value());
+		log.info("Problem solved in {} milliseconds", + solver.wallTime());
+		log.info("Problem solved in {} iterations", solver.iterations());
+		log.info("Problem solved in {} branch-and-bound nodes", solver.nodes());
+		String lpFormat = solver.exportModelAsLpFormat(false);
+		log.info("Model in LP format:\n{}", lpFormat);
 	}
 
 	private void logY() {
@@ -629,7 +632,7 @@ public class MP_CSAHLP {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
 					for (int l = 0; l < this.nbNodes; l++) {
-						log.error("y[{}][{}][{}][{}] = {}", p, i, k, l, this.y[p][i][k][l].solutionValue());
+						log.info("y[{}][{}][{}][{}] = {}", p, i, k, l, this.y[p][i][k][l].solutionValue());
 					}
 				}
 			}
@@ -640,7 +643,7 @@ public class MP_CSAHLP {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
-					log.error("x[{}][{}][{}] = {}", p, i, j, this.x[p][i][j].solutionValue());
+					log.info("x[{}][{}][{}] = {}", p, i, j, this.x[p][i][j].solutionValue());
 				}
 			}
 		}
@@ -648,7 +651,7 @@ public class MP_CSAHLP {
 
 	private void logZ() {
 		for (int i = 0; i < this.nbNodes; ++i) {
-			log.error("z = [{}] = {}", i, this.z[i].solutionValue());
+			log.info("z = [{}] = {}", i, this.z[i].solutionValue());
 		}
 	} 
 
