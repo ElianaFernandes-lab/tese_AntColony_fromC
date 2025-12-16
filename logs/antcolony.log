@@ -18,3 +18,6 @@
 2025-12-16 19:58:00.929 [com.ef.antcolony.other.TestLogs.main()] INFO  com.ef.antcolony.other.TestLogs:29 - Info message
 2025-12-16 19:58:00.929 [com.ef.antcolony.other.TestLogs.main()] WARN  com.ef.antcolony.other.TestLogs:30 - Warning message
 2025-12-16 19:58:00.930 [com.ef.antcolony.other.TestLogs.main()] ERROR com.ef.antcolony.other.TestLogs:31 - Error message
+2025-12-16 20:16:12.271 [main] INFO  main.java.com.ef.antcolony.other.WriteLogs:29 - Info message
+2025-12-16 20:16:12.273 [main] WARN  main.java.com.ef.antcolony.other.WriteLogs:30 - Warning message
+2025-12-16 20:16:12.274 [main] ERROR main.java.com.ef.antcolony.other.WriteLogs:31 - Error message
