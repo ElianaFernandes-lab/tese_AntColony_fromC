@@ -5,8 +5,8 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestLogs {
-    private static final Logger logger = LoggerFactory.getLogger(TestLogs.class);
+public class WriteLogs {
+    private static final Logger logger = LoggerFactory.getLogger(WriteLogs.class);
     
     /**
      * Ensures the logs directory exists before logging starts.
@@ -34,6 +34,6 @@ public class TestLogs {
     public static void main(String[] args) {
         // Ensure logs directory exists before any logging occurs
         ensureLogsDirectory();
-    	TestLogs.someMethod();
+    	WriteLogs.someMethod();
     }
 }
