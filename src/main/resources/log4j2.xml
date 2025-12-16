@@ -30,9 +30,9 @@
 
     <Loggers>
         <!-- Set specific logger levels here -->
-        <!-- com.ef.antcolony.other.TestLogs will inherit from com.ef.antcolony -->
+        <!-- main.java.com.ef.antcolony.other.WriteLogs will inherit from main.java.com.ef.antcolony -->
         <!-- additivity="false" prevents duplicate logs (since we're adding appenders here) -->
-        <Logger name="com.ef.antcolony" level="DEBUG" additivity="false">
+        <Logger name="main.java.com.ef.antcolony" level="DEBUG" additivity="false">
             <AppenderRef ref="CONSOLE"/>
             <AppenderRef ref="FILE"/>
         </Logger>
