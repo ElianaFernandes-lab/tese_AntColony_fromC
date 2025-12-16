@@ -1,7 +1,5 @@
 package main.java.com.ef.antcolony.ortools;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,22 +72,22 @@ public class MPCSAHLP {
 			// ==============================
 			// Variables
 			// ==============================
-			log.info("Creating variables...");
+			log.debug("Creating variables...");
 			createVars(solver);
-			log.info("Variables created. Total variables: {}", solver.numVariables());
+			log.debug("Variables created. Total variables: {}", solver.numVariables());
 
-			log.info("Creating constraints ...");
+			log.debug("Creating constraints ...");
 			createConstraints(data, solver);
-			log.info("Constraints created.");
+			log.debug("Constraints created.");
 
-			log.info("Creating objective function...");
+			log.debug("Creating objective function...");
 			MPObjective obj = createObjectiveFunction(solver, data);
-			log.info("Objective function created.");
+			log.debug("Objective function created.");
 
 			// ==============================
 			// Solve
 			// ==============================
-			log.info("Solving model with {} variables and {} constraints...",  solver.numVariables(), solver.numConstraints());
+			log.debug("Solving model with {} variables and {} constraints...",  solver.numVariables(), solver.numConstraints());
 
 			MPSolver.ResultStatus resultStatus = solver.solve();
 
@@ -110,10 +108,10 @@ public class MPCSAHLP {
 					}
 				}
 
-				log.error("HiGHS LR for TAU0 COMPUTED - Objective: {}, Runtime: {}s", obj.value(), runtimeSec);
+				log.debug("{} LR for TAU0 COMPUTED - Objective: {}, Runtime: {}s", solverId, obj.value(), runtimeSec);
 
 			} else {
-				log.error("No solution found. Result status: {}", resultStatus);
+				log.debug("No solution found. Result status: {}", resultStatus);
 			}
 
 		} catch (Exception e) {
@@ -141,25 +139,25 @@ public class MPCSAHLP {
 			// ==============================
 			// Variables
 			// ==============================
-			log.error("Creating variables...");
+			log.debug("Creating variables...");
 			createVars(solver, sol);
-			log.error("Variables created. Total variables: {}", solver.numVariables());
+			log.debug("Variables created. Total variables: {}", solver.numVariables());
 
 			validateXConstraingsDELETE(sol);
 
 			// ==============================
 			// Objective function (create BEFORE constraints)
 			// ==============================
-			log.error("Creating objective function...");
+			log.debug("Creating objective function...");
 			MPObjective obj = createObjectiveFunction(solver, data);
-			log.error("Objective function created.");
+			log.debug("Objective function created.");
 
 			createConstraints(data, solver);
 
 			// ==============================
 			// Solve
 			// ==============================
-			log.error("Solving model with {} variables and {} constraints...", 
+			log.debug("Solving model with {} variables and {} constraints...", 
 					solver.numVariables(), solver.numConstraints());
 
 			MPSolver.ResultStatus resultStatus = solver.solve();
@@ -181,7 +179,7 @@ public class MPCSAHLP {
 					}
 				}
 
-				log.error("HiGHS LR for TAU0 COMPUTED - Objective: {}, Runtime: {}s", obj.value(), runtimeSec);
+				log.debug("{} LR for TAU0 COMPUTED - Objective: {}, Runtime: {}s", solverId, obj.value(), runtimeSec);
 				return true;
 			} else {
 				log.error("No solution found. Result status: {}", resultStatus);
@@ -190,12 +188,6 @@ public class MPCSAHLP {
 
 		} catch (Exception e) {
 			log.error("Error during solver execution: {}", e.getMessage(), e);
-			try (PrintWriter err = new PrintWriter(new FileWriter("HiGHS_LR_ERROR.txt", true))) {
-				err.println("Error: " + e.getMessage());
-				e.printStackTrace(err);
-			} catch (Exception ex) {
-				log.error("Failed to write error log: {}", ex.getMessage(), ex);
-			}
 		}
 
 		return false;
@@ -208,9 +200,9 @@ public class MPCSAHLP {
 					if (i == j) continue;
 					// Skip self-allocation: x[p][j][j] <= x[p][j][j] is trivial
 					if(sol.x[p][i][j] <= sol.x[p][j][j]) {
-						log.error("sol.x[{}][{}][{}] OK ", p, i, j);
+						log.debug("sol.x[{}][{}][{}] OK ", p, i, j);
 					} else {
-						log.error("sol.x[{}][{}][{}] NOK ", p, i, j);
+						log.debug("sol.x[{}][{}][{}] NOK ", p, i, j);
 					}
 				}
 			}
@@ -223,56 +215,56 @@ public class MPCSAHLP {
 		// 3.4. hub assignment constraints
 		// x[p][i][k] <= x[p][k][k]
 		// ==============================
-		log.error("Adding hub assignment constraints...");
+		log.debug("Adding hub assignment constraints...");
 		addHubAssignmentConstraints(solver);
-		log.error("Added ub assignment constraints. Total constraints: {}", solver.numConstraints());
+		log.debug("Added ub assignment constraints. Total constraints: {}", solver.numConstraints());
 
 		// ==============================
 		// 3.5. Capacity per hub
 		// sum_i O[i][p] * x[i][k][p] <= gamma[k][p] * x[k][k][p]
 		// ==============================
-		log.error("Adding capacity constraints...");
+		log.debug("Adding capacity constraints...");
 		addCapacityConstraints(solver, data);
-		log.error("Added capacity constraints. Total constraints: {}", solver.numConstraints());
+		log.debug("Added capacity constraints. Total constraints: {}", solver.numConstraints());
 
 		// ==============================
 		// 3.6 Maximum products at hub
 		// sum_p x[k][k][p] <= L[k] * z[k]
 		// ==============================
-		log.error("Adding max products at hub constraints...");
+		log.debug("Adding max products at hub constraints...");
 		addMaxHubProdConstraints(solver, data);
-		log.error("Added max products at hub constraints. Total constraints: {}", solver.numConstraints());
+		log.debug("Added max products at hub constraints. Total constraints: {}", solver.numConstraints());
 
 		// ==============================
 		// 3.13. Single allocation constraint
 		// ==============================
-		log.error("Adding single allocation constraints...");
+		log.debug("Adding single allocation constraints...");
 		addSingleAllocationConstraints(solver);
-		log.error("Added single allocation constraints. Total constraints: {}", solver.numConstraints());
+		log.debug("Added single allocation constraints. Total constraints: {}", solver.numConstraints());
 
 		// ==============================
 		// 3.14. Flow divergence constraints
 		// sum in l ypikl − sum in l ypilk = Opi * xpik − wpij * xpjk ,i,k∈N,p∈P,
 		// ==============================
-		log.error("Adding flow divergence constraints...");
+		log.debug("Adding flow divergence constraints...");
 		addFlowDivergenceConstraints(solver, data);
-		log.error("Added flow divergence constraints. Total constraints: {}", solver.numConstraints());
+		log.debug("Added flow divergence constraints. Total constraints: {}", solver.numConstraints());
 
 		// ==============================
 		// 3.15. Flow allocation linking hub
 		// sum in l y[p][i][k][l] <= O[i][p] * x[i][k][p] for l != k
 		// ==============================
-		log.error("Adding flow allocation linking hub constraints...");
+		log.debug("Adding flow allocation linking hub constraints...");
 		addFlowAllocationLinkingHubConstraints(solver, data);
-		log.error("Added flow allocation linking hub. Total constraints: {}", solver.numConstraints());
+		log.debug("Added flow allocation linking hub. Total constraints: {}", solver.numConstraints());
 
 
 		// ==============================
 		// Enhancements
 		// ==============================
-		log.error("Adding minimum hubs per product constraints...");
+		log.debug("Adding minimum hubs per product constraints...");
 		addMinimumHubsPerProdConstraints(solver, data);
-		log.error("Added minimum hubs per product constraints. Total constraints: {}", solver.numConstraints());
+		log.debug("Added minimum hubs per product constraints. Total constraints: {}", solver.numConstraints());
 	}
 
 	private MPSolver createSolver() {
@@ -284,7 +276,7 @@ public class MPCSAHLP {
 			log.error("{} solver unavailable.", solverId);
 			return null;
 		} else {
-			log.error("{} solver used.", solverId);
+			log.debug("{} solver used.", solverId);
 		}
 
 		return solver;
@@ -355,7 +347,7 @@ public class MPCSAHLP {
 				} else {
 					log.error("isForcingSolution and solutionZ is null");
 				}
-				
+
 			} else {
 				this.z[j] = solver.makeBoolVar("z_" + j);
 			}
@@ -616,16 +608,16 @@ public class MPCSAHLP {
 	}
 
 	private void logSolution(MPSolver solver, MPObjective obj, double runtimeSec) {
-		log.info("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
+		log.debug("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
 		logZ();
 		logX();
 		logY();
-		log.info("Objective value = {}", obj.value());
-		log.info("Problem solved in {} milliseconds", + solver.wallTime());
-		log.info("Problem solved in {} iterations", solver.iterations());
-		log.info("Problem solved in {} branch-and-bound nodes", solver.nodes());
+		log.debug("Objective value = {}", obj.value());
+		log.debug("Problem solved in {} milliseconds", + solver.wallTime());
+		log.debug("Problem solved in {} iterations", solver.iterations());
+		log.debug("Problem solved in {} branch-and-bound nodes", solver.nodes());
 		String lpFormat = solver.exportModelAsLpFormat(false);
-		log.info("Model in LP format:\n{}", lpFormat);
+		log.debug("Model in LP format:\n{}", lpFormat);
 	}
 
 	private void logY() {
@@ -633,7 +625,7 @@ public class MPCSAHLP {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int k = 0; k < this.nbNodes; k++) {
 					for (int l = 0; l < this.nbNodes; l++) {
-						log.info("y[{}][{}][{}][{}] = {}", p, i, k, l, this.y[p][i][k][l].solutionValue());
+						log.debug("y[{}][{}][{}][{}] = {}", p, i, k, l, this.y[p][i][k][l].solutionValue());
 					}
 				}
 			}
@@ -644,7 +636,7 @@ public class MPCSAHLP {
 		for (int p = 0; p < this.nbProducts; p++) {
 			for (int i = 0; i < this.nbNodes; i++) {
 				for (int j = 0; j < this.nbNodes; j++) {
-					log.info("x[{}][{}][{}] = {}", p, i, j, this.x[p][i][j].solutionValue());
+					log.debug("x[{}][{}][{}] = {}", p, i, j, this.x[p][i][j].solutionValue());
 				}
 			}
 		}
@@ -652,7 +644,7 @@ public class MPCSAHLP {
 
 	private void logZ() {
 		for (int i = 0; i < this.nbNodes; ++i) {
-			log.info("z = [{}] = {}", i, this.z[i].solutionValue());
+			log.debug("z = [{}] = {}", i, this.z[i].solutionValue());
 		}
 	} 
 
