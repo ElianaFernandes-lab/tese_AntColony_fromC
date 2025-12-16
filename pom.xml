@@ -10,9 +10,8 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<maven.compiler.source>11</maven.compiler.source>  <!-- or 17, 21, etc.
-		depending on your Java version -->
-		<maven.compiler.target>11</maven.compiler.target>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -23,14 +22,35 @@
 			<groupId>com.google.ortools</groupId>
 			<artifactId>ortools-java</artifactId>
 			<version>9.14.6206</version>
+			<exclusions>
+				<!-- Exclude any Logback dependencies to avoid conflicts with Log4j2 -->
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
-		<!-- Log4j 2 dependency -->
-		<!-- Logback (includes SLF4J API and the native implementation) -->
+		<!-- Log4j 2 dependencies -->
+		<!-- Log4j 2 API -->
 		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.5.8</version>  <!-- Latest as of late 2025 -->
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.20.0</version>
+		</dependency>
+		
+		<!-- Log4j 2 Core Implementation -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.20.0</version>
+		</dependency>
+		
+		<!-- SLF4J to Log4j2 Bridge (allows code using SLF4J API to work with Log4j2) -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j2-impl</artifactId>
+			<version>2.20.0</version>
 		</dependency>
 
 	</dependencies>
@@ -45,6 +65,11 @@
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>
+			</resource>
+			<!-- Additional resource to copy main/resources to classpath root -->
+			<resource>
+				<directory>src/main/resources</directory>
+				<targetPath>.</targetPath>
 			</resource>
 		</resources>
 

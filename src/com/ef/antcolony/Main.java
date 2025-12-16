@@ -6,6 +6,7 @@ package com.ef.antcolony;
  * Original by Eliana Fernandes
  * Copyright (c) 2015 Eliana Fernandes. All rights reserved.
  */
+import java.io.File;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
@@ -18,7 +19,25 @@ public class Main {
 
 	private static final Logger log = LoggerFactory.getLogger(Main.class);
 
+	/**
+	 * Ensures the logs directory exists before logging starts.
+	 * Logback's RollingFileAppender does not automatically create parent directories.
+	 */
+	private static void ensureLogsDirectory() {
+		File logsDir = new File("logs");
+		if (!logsDir.exists()) {
+			boolean created = logsDir.mkdirs();
+			if (created) {
+				System.out.println("Created logs directory: " + logsDir.getAbsolutePath());
+			} else {
+				System.err.println("Warning: Failed to create logs directory: " + logsDir.getAbsolutePath());
+			}
+		}
+	}
+
 	public static void main(String[] args) {
+		// Ensure logs directory exists before any logging occurs
+		ensureLogsDirectory();
 		
 		String fileIn;
 		String fileOut = "out.txt";

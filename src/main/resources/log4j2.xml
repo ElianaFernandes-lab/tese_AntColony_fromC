@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <!-- Default log file location, can be overridden with -DLOG_FILE system property -->
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36}:%L - %msg%n</Property>
+        <Property name="CONSOLE_PATTERN">%d{HH:mm:ss.SSS} [%t] %-5level %logger{36}:%L - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Console Appender -->
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}"/>
+        </Console>
+
+        <!-- Rolling File Appender -->
+        <!-- Default: logs/antcolony.log, can be overridden with -DLOG_FILE system property -->
+        <RollingFile name="FILE" 
+                     fileName="${sys:LOG_FILE:-logs/antcolony.log}"
+                     filePattern="logs/antcolony.%d{yyyy-MM-dd}.log"
+                     immediateFlush="true">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <!-- Roll over daily -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <!-- Keep 30 days of history -->
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Set specific logger levels here -->
+        <!-- com.ef.antcolony.other.TestLogs will inherit from com.ef.antcolony -->
+        <!-- additivity="false" prevents duplicate logs (since we're adding appenders here) -->
+        <Logger name="com.ef.antcolony" level="DEBUG" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+        
+        <!-- Root logger -->
+        <Root level="INFO">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Root>
+    </Loggers>
+</Configuration>
