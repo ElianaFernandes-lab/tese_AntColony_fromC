@@ -9,3 +9,6 @@ LShistory.txt
 out.txt
 output_highs.log
 logs/antcolony.log
+*.log
+*.log
+/logs
