@@ -18,9 +18,9 @@ public class AcoVar {
 
 	public static final boolean LOG = true;
 
-	// #define INTER_HUB   -> commented out
-	public static final boolean LOGG = true;
-			
+	// logs
+	public static final boolean LOG_MPCSAHLP = true;
+	
 	public static final boolean USE_LR = true;      // also requires SCAL_LR
 	public static final boolean LS = true;
 	public static final boolean LSHIST = true;

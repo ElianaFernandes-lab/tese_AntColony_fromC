@@ -28,6 +28,7 @@ public class MPCSAHLP {
 	private static final String HUB_MAX_PROD_CSTRNT_NAME = "HMP";
 	private static final String SINGLE_ALLOCATION_CSTRNT_NAME = "SA";
 	private static final String FLOW_DIVERGENCE_CSTRNT_NAME = "FD";
+	private static final String MINIMUM_HUBS_PER_PRODS_CSTRNT_NAME = "MHP";
 
 	private static final Logger log = LoggerFactory.getLogger(MPCSAHLP.class);
 
@@ -37,7 +38,7 @@ public class MPCSAHLP {
 	private boolean isLinearRelaxation = false;
 	private boolean isForcingSolution = false;
 
-	String solverId = AcoVar.SOLVER_ID;
+	String solverId = "GLOP";//AcoVar.SOLVER_ID;
 
 	MPVariable[][][] x;
 	MPVariable[][][][] y;
@@ -111,7 +112,10 @@ public class MPCSAHLP {
 				log.debug("{} LR for TAU0 COMPUTED - Objective: {}, Runtime: {}s", solverId, obj.value(), runtimeSec);
 
 			} else {
-				log.debug("No solution found. Result status: {}", resultStatus);
+				log.error("No solution found. Result status: {}", resultStatus);
+				if (resultStatus == MPSolver.ResultStatus.INFEASIBLE && AcoVar.LOG_MPCSAHLP) {
+					logInfeasibleConstraints(solver);
+				}
 			}
 
 		} catch (Exception e) {
@@ -152,7 +156,9 @@ public class MPCSAHLP {
 			MPObjective obj = createObjectiveFunction(solver, data);
 			log.debug("Objective function created.");
 
+			log.debug("Creating constraints ...");
 			createConstraints(data, solver);
+			log.debug("Constraints created.");
 
 			// ==============================
 			// Solve
@@ -183,6 +189,9 @@ public class MPCSAHLP {
 				return true;
 			} else {
 				log.error("No solution found. Result status: {}", resultStatus);
+				if (resultStatus == MPSolver.ResultStatus.INFEASIBLE && AcoVar.LOG_MPCSAHLP) {
+					logInfeasibleConstraints(solver);
+				}
 				return false;
 			}
 
@@ -252,7 +261,7 @@ public class MPCSAHLP {
 
 		// ==============================
 		// 3.15. Flow allocation linking hub
-		// sum in l y[p][i][k][l] <= O[i][p] * x[i][k][p] for l != k
+		// sum in l y[p][i][k][l] <= O[i][p] * x[i][k][p]
 		// ==============================
 		log.debug("Adding flow allocation linking hub constraints...");
 		addFlowAllocationLinkingHubConstraints(solver, data);
@@ -268,10 +277,18 @@ public class MPCSAHLP {
 	}
 
 	private MPSolver createSolver() {
+		log.info("start loadNativeLibraries");
 		Loader.loadNativeLibraries();
-
+		log.info(" end loadNativeLibraries");
+		
 		// Create HiGHS solver
-		MPSolver solver = MPSolver.createSolver(solverId);
+		MPSolver solver = null;
+		try {
+			solver = MPSolver.createSolver(solverId);
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+		
 		if (solver == null) {
 			log.error("{} solver unavailable.", solverId);
 			return null;
@@ -313,7 +330,7 @@ public class MPCSAHLP {
 						double fixedBound = solutionX[p][i][j];
 						this.x[p][i][j] = solver.makeNumVar(fixedBound, fixedBound , "x_" + p + "_" + i + "_" + j);
 					} else {
-						this.x[p][i][j] = solver.makeBoolVar("x_" + p + "_" + i + "_" + j);
+						this.x[p][i][j] = solver.makeIntVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
 					}
 				}
 			}
@@ -349,7 +366,7 @@ public class MPCSAHLP {
 				}
 
 			} else {
-				this.z[j] = solver.makeBoolVar("z_" + j);
+				this.z[j] = solver.makeIntVar(0.0, 1.0,"z_" + j);
 			}
 		}
 	}
@@ -446,9 +463,10 @@ public class MPCSAHLP {
 		// Constraint: x[p][i][j] <= x[p][j][j]
 		// (If node i is allocated to hub j for product p, then j must be a hub for product p)
 		// Rewritten as: x[p][i][j] - x[p][j][j] <= 0
-		for (int i = 0; i < this.nbNodes; i++) {
-			for (int k = 0; k < this.nbNodes; k++) {
-				for (int p = 0; p < this.nbProducts; p++) {
+		for (int p = 0; p < this.nbProducts; p++) {
+			for (int i = 0; i < this.nbNodes; i++) {
+				for (int k = 0; k < this.nbNodes; k++) {
+
 					// Skip self-allocation: x[p][j][j] <= x[p][j][j] is trivial
 					if (i == k) {
 						continue;
@@ -500,11 +518,12 @@ public class MPCSAHLP {
 					// Flow conservation at hub k for origin i
 					for (int l = 0; l < this.nbNodes; l++) {
 						c.setCoefficient(this.y[p][i][k][l], 1.0);   // outflow from k
-					}
-
-					for (int l = 0; l < this.nbNodes; l++) {
 						c.setCoefficient(this.y[p][i][l][k], -1.0);  // inflow to k
 					}
+
+//					for (int l = 0; l < this.nbNodes; l++) {
+//						
+//					}
 
 					// Supply/demand terms
 					c.setCoefficient(this.x[p][i][k], -data.originatedFlow[p][i]);
@@ -518,7 +537,7 @@ public class MPCSAHLP {
 	}
 
 	/**
-	 * sum in l y[p][i][k][l] <= O[i][p] * x[i][k][p] for l != k
+	 * sum in l y[p][i][k][l] <= O[i][p] * x[i][k][p]
 	 * @param solver
 	 * @param data
 	 */
@@ -529,6 +548,7 @@ public class MPCSAHLP {
 					String name = String.format(S_S_S_S, FLOW_ALLOC_LINK_HUB_CSTRNT_NAME, p, i, k);
 					MPConstraint c = solver.makeConstraint(Double.NEGATIVE_INFINITY, 0.0, name);
 
+					
 					for (int l = 0; l < this.nbNodes; l++) {
 						c.setCoefficient(this.y[p][i][k][l], 1.0);
 					}
@@ -597,7 +617,8 @@ public class MPCSAHLP {
 			}
 
 			// Add constraint: sum of hubs for product p >= r
-			MPConstraint c = solver.makeConstraint(r, Double.POSITIVE_INFINITY,  "MHP" + p);
+			String name = String.format(S_S, MINIMUM_HUBS_PER_PRODS_CSTRNT_NAME, p);
+			MPConstraint c = solver.makeConstraint(r, Double.POSITIVE_INFINITY,  name);
 
 			for (int k = 0; k < this.nbNodes; k++) {
 				c.setCoefficient(this.x[p][k][k], 1.0);
@@ -609,9 +630,9 @@ public class MPCSAHLP {
 
 	private void logSolution(MPSolver solver, MPObjective obj, double runtimeSec) {
 		log.debug("Solution found. Objective = {}, Runtime = {} s", obj.value(), runtimeSec);
-		logZ();
+//		logZ();
 		logX();
-		logY();
+//		logY();
 		log.debug("Objective value = {}", obj.value());
 		log.debug("Problem solved in {} milliseconds", + solver.wallTime());
 		log.debug("Problem solved in {} iterations", solver.iterations());
@@ -646,6 +667,189 @@ public class MPCSAHLP {
 		for (int i = 0; i < this.nbNodes; ++i) {
 			log.debug("z = [{}] = {}", i, this.z[i].solutionValue());
 		}
-	} 
+	}
+
+	/**
+	 * Logs detailed information about all constraints when the model is infeasible.
+	 * This helps identify which constraints might be causing the infeasibility.
+	 * 
+	 * @param solver The MPSolver instance
+	 */
+	private void logInfeasibleConstraints(MPSolver solver) {
+		log.error("=========================================");
+		log.error("INFEASIBLE MODEL - Constraint Analysis");
+		log.error("=========================================");
+		log.error("Total constraints: {}", solver.numConstraints());
+		log.error("Total variables: {}", solver.numVariables());
+		
+		// Export model to LP format for external analysis
+		try {
+			String lpFormat = solver.exportModelAsLpFormat(false);
+			log.error("Model in LP format:\n{}", lpFormat);
+		} catch (Exception e) {
+			log.error("Could not export LP format: {}", e.getMessage());
+		}
+		
+		log.error("----------------------------------------");
+		log.error("Constraint Details:");
+		log.error("----------------------------------------");
+		
+		// Iterate through all constraints
+		for (int i = 0; i < solver.numConstraints(); i++) {
+			try {
+				MPConstraint constraint = solver.constraint(i);
+				String name = constraint.name();
+				double lb = constraint.lb();
+				double ub = constraint.ub();
+				
+				// Build constraint expression string using stored variables
+				StringBuilder expr = new StringBuilder();
+				boolean firstTerm = true;
+				int nonZeroCoeffs = 0;
+				
+				// Check x variables
+				if (this.x != null) {
+					for (int p = 0; p < this.nbProducts; p++) {
+						for (int i_idx = 0; i_idx < this.nbNodes; i_idx++) {
+							for (int j = 0; j < this.nbNodes; j++) {
+								if (this.x[p][i_idx][j] != null) {
+									double coeff = constraint.getCoefficient(this.x[p][i_idx][j]);
+									if (Math.abs(coeff) > 1e-10) {
+										if (!firstTerm) {
+											expr.append(coeff >= 0 ? " + " : " - ");
+										} else if (coeff < 0) {
+											expr.append("-");
+										}
+										expr.append(String.format("%.6f", Math.abs(coeff)))
+											.append(" * x[").append(p).append("][").append(i_idx).append("][").append(j).append("]");
+										firstTerm = false;
+										nonZeroCoeffs++;
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				// Check y variables
+				if (this.y != null) {
+					for (int p = 0; p < this.nbProducts; p++) {
+						for (int i_idx = 0; i_idx < this.nbNodes; i_idx++) {
+							for (int k = 0; k < this.nbNodes; k++) {
+								for (int l = 0; l < this.nbNodes; l++) {
+									if (this.y[p][i_idx][k][l] != null) {
+										double coeff = constraint.getCoefficient(this.y[p][i_idx][k][l]);
+										if (Math.abs(coeff) > 1e-10) {
+											if (!firstTerm) {
+												expr.append(coeff >= 0 ? " + " : " - ");
+											} else if (coeff < 0) {
+												expr.append("-");
+											}
+											expr.append(String.format("%.6f", Math.abs(coeff)))
+												.append(" * y[").append(p).append("][").append(i_idx).append("][").append(k).append("][").append(l).append("]");
+											firstTerm = false;
+											nonZeroCoeffs++;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				// Check z variables
+				if (this.z != null) {
+					for (int j = 0; j < this.nbNodes; j++) {
+						if (this.z[j] != null) {
+							double coeff = constraint.getCoefficient(this.z[j]);
+							if (Math.abs(coeff) > 1e-10) {
+								if (!firstTerm) {
+									expr.append(coeff >= 0 ? " + " : " - ");
+								} else if (coeff < 0) {
+									expr.append("-");
+								}
+								expr.append(String.format("%.6f", Math.abs(coeff)))
+									.append(" * z[").append(j).append("]");
+								firstTerm = false;
+								nonZeroCoeffs++;
+							}
+						}
+					}
+				}
+				
+				// Format constraint bounds
+				String boundsStr;
+				if (lb == ub) {
+					boundsStr = String.format(" = %.6f", lb);
+				} else if (lb == Double.NEGATIVE_INFINITY && ub == Double.POSITIVE_INFINITY) {
+					boundsStr = " (unbounded)";
+				} else if (lb == Double.NEGATIVE_INFINITY) {
+					boundsStr = String.format(" <= %.6f", ub);
+				} else if (ub == Double.POSITIVE_INFINITY) {
+					boundsStr = String.format(" >= %.6f", lb);
+				} else {
+					boundsStr = String.format(" in [%.6f, %.6f]", lb, ub);
+				}
+				
+				log.error("Constraint [{}]: {}{}{}", i, name, 
+						expr.length() > 0 ? ": " + expr.toString() : " (empty - " + nonZeroCoeffs + " coefficients)", 
+						boundsStr);
+				
+				// Check for potentially problematic constraints
+				if (lb > ub) {
+					log.error("  *** INVALID: Lower bound ({}) > Upper bound ({}) ***", lb, ub);
+				}
+				if (lb == Double.POSITIVE_INFINITY || ub == Double.NEGATIVE_INFINITY) {
+					log.error("  *** INVALID: Impossible bounds ***");
+				}
+			} catch (Exception e) {
+				log.error("Error accessing constraint [{}]: {}", i, e.getMessage());
+			}
+		}
+		
+		log.error("----------------------------------------");
+		log.error("Variable Bounds Summary:");
+		log.error("----------------------------------------");
+		
+		// Log variable bounds that might be problematic
+		int invalidVars = 0;
+		if (this.x != null) {
+			for (int p = 0; p < this.nbProducts; p++) {
+				for (int i = 0; i < this.nbNodes; i++) {
+					for (int j = 0; j < this.nbNodes; j++) {
+						if (this.x[p][i][j] != null) {
+							double lb = this.x[p][i][j].lb();
+							double ub = this.x[p][i][j].ub();
+							if (lb > ub || lb == Double.POSITIVE_INFINITY || ub == Double.NEGATIVE_INFINITY) {
+								log.error("Variable x[{}][{}][{}]: INVALID bounds [{} to {}]", p, i, j, lb, ub);
+								invalidVars++;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		if (this.z != null) {
+			for (int j = 0; j < this.nbNodes; j++) {
+				if (this.z[j] != null) {
+					double lb = this.z[j].lb();
+					double ub = this.z[j].ub();
+					if (lb > ub || lb == Double.POSITIVE_INFINITY || ub == Double.NEGATIVE_INFINITY) {
+						log.error("Variable z[{}]: INVALID bounds [{} to {}]", j, lb, ub);
+						invalidVars++;
+					}
+				}
+			}
+		}
+		
+		if (invalidVars == 0) {
+			log.error("No invalid variable bounds found.");
+		} else {
+			log.error("Found {} variables with invalid bounds.", invalidVars);
+		}
+		
+		log.error("=========================================");
+	}
 
 }
