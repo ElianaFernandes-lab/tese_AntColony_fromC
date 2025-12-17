@@ -38,7 +38,7 @@ public class MPCSAHLP {
 	private boolean isLinearRelaxation = false;
 	private boolean isForcingSolution = false;
 
-	String solverId = "GLOP";//AcoVar.SOLVER_ID;
+	String solverId = AcoVar.SOLVER_ID;
 
 	MPVariable[][][] x;
 	MPVariable[][][][] y;
@@ -637,8 +637,11 @@ public class MPCSAHLP {
 		log.debug("Problem solved in {} milliseconds", + solver.wallTime());
 		log.debug("Problem solved in {} iterations", solver.iterations());
 		log.debug("Problem solved in {} branch-and-bound nodes", solver.nodes());
-		String lpFormat = solver.exportModelAsLpFormat(false);
-		log.debug("Model in LP format:\n{}", lpFormat);
+		if (AcoVar.LOG_MPCSAHLP) {
+			String lpFormat = solver.exportModelAsLpFormat(false);
+			log.debug("Model in LP format:\n{}", lpFormat);
+		}
+		
 	}
 
 	private void logY() {
