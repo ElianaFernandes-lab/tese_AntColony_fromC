@@ -330,7 +330,7 @@ public class MPCSAHLP {
 						double fixedBound = solutionX[p][i][j];
 						this.x[p][i][j] = solver.makeNumVar(fixedBound, fixedBound , "x_" + p + "_" + i + "_" + j);
 					} else {
-						this.x[p][i][j] = solver.makeIntVar(0.0, 1.0, "x_" + p + "_" + i + "_" + j);
+						this.x[p][i][j] = solver.makeBoolVar("x_" + p + "_" + i + "_" + j);
 					}
 				}
 			}
@@ -366,7 +366,7 @@ public class MPCSAHLP {
 				}
 
 			} else {
-				this.z[j] = solver.makeIntVar(0.0, 1.0,"z_" + j);
+				this.z[j] = solver.makeBoolVar("z_" + j);
 			}
 		}
 	}
