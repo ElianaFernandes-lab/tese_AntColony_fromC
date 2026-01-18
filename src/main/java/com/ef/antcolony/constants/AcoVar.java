@@ -19,7 +19,7 @@ public class AcoVar {
 	public static final boolean LOG = true;
 
 	// logs
-	public static final boolean LOG_MPCSAHLP = false;
+	public static final boolean LOG_MPCSAHLP = true;
 	
 	public static final boolean USE_LR = true;      // also requires SCAL_LR
 	public static final boolean LS = true;
@@ -73,6 +73,7 @@ public class AcoVar {
 	public static final boolean SCAL_LR = true;
 
 	public static final String INPUT_PATH = "/Users/elianafernandes/Documents/Eclipse_projs/tese2025/tese_AntColony_fromC/src/inputfiles/";
+	public static final String INPUT_SOL_PATH = "/Users/elianafernandes/Documents/Eclipse_projs/tese2025/tese_AntColony_fromC/src/inputfiles/sol/";
 	// Used for selection in the pseudo-random proportional rule
 	public static final double Q0 = 1.0; //0.1;
 	
