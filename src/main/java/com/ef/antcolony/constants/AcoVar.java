@@ -19,7 +19,7 @@ public class AcoVar {
 	public static final boolean LOG = true;
 
 	// logs
-	public static final boolean LOG_MPCSAHLP = true;
+	public static final boolean LOG_MPCSAHLP = false;
 	
 	public static final boolean USE_LR = true;      // also requires SCAL_LR
 	public static final boolean LS = true;

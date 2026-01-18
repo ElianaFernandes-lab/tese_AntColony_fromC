@@ -709,7 +709,6 @@ public class MPCSAHLP {
 						solver.exportModelAsLpFormat(false)
 						);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
