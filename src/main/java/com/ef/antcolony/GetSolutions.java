@@ -23,10 +23,10 @@ public class GetSolutions {
 		public double cost;
 		public double time;
 
-		public Solution(Data dados) {
-			x = new int[dados.nbProducts][dados.nbNodes][dados.nbNodes];
-			y = new double[dados.nbProducts][dados.nbNodes][dados.nbNodes][dados.nbNodes];
-			z = new int[dados.nbNodes];
+		public Solution(Data data) {
+			x = new int[data.nbProducts][data.nbNodes][data.nbNodes];
+			y = new double[data.nbProducts][data.nbNodes][data.nbNodes][data.nbNodes];
+			z = new int[data.nbNodes];
 		}
 		
 		public String xToString() {
