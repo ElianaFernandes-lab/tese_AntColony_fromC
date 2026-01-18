@@ -12,10 +12,6 @@ import com.google.ortools.linearsolver.MPConstraint;
 import com.google.ortools.linearsolver.MPObjective;
 import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
-import com.google.ortools.modelbuilder.LinearArgument;
-import com.google.ortools.modelbuilder.LinearConstraint;
-import com.google.ortools.modelbuilder.LinearExpr;
-import com.google.ortools.modelbuilder.LinearExprBuilder;
 
 import main.java.com.ef.antcolony.Aco;
 import main.java.com.ef.antcolony.GetSolutions.Solution;
@@ -25,16 +21,6 @@ import main.java.com.ef.antcolony.constants.AcoVar;
 public class MPCSAHLP {
 
 	private static final String LINE_SEPARATOR = "=========================================";
-	private static final String S_S = "%s_%s";
-	private static final String S_S_S = "%s_%s_%s";
-	private static final String S_S_S_S = "%s_%s_%s_%s";
-	private static final String FLOW_ALLOC_LINK_HUB_CSTRNT_NAME = "FALH";
-	private static final String HUB_ASSIGNENT_CSTRNT_NAME = "HA";
-	private static final String CAPACITY_CSTRNT_NAME = "CAP";
-	private static final String HUB_MAX_PROD_CSTRNT_NAME = "HMP";
-	private static final String SINGLE_ALLOCATION_CSTRNT_NAME = "SA";
-	private static final String FLOW_DIVERGENCE_CSTRNT_NAME = "FD";
-	private static final String MINIMUM_HUBS_PER_PRODS_CSTRNT_NAME = "MHP";
 
 	private static final Logger log = LoggerFactory.getLogger(MPCSAHLP.class);
 
