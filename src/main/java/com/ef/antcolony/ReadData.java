@@ -72,6 +72,11 @@ public class ReadData {
     private static class Point {
         double x;
         double y;
+        
+		@Override
+		public String toString() {
+			return "Point [x=" + x + ", y=" + y + "]";
+		}
     }
 
     /**
@@ -79,7 +84,7 @@ public class ReadData {
      */
     public static Data readData(String fichIn) {
         Data dados = null;
-        String input = AcoVar.INPUT_PATH + fichIn;
+        String input = AcoVar.INPUT_PATH + fichIn + ".dat";
         try (Scanner scanner = new Scanner(new File(input))) {
 
             // Read nbNodes and nbProducts
@@ -106,12 +111,12 @@ public class ReadData {
             }
 
             // Read flows w[p][i][j]
-            for (int i = 0; i < nbNodes; i++) {
-                for (int j = 0; j < nbNodes; j++) {
-                    for (int p = 0; p < nbProducts; p++) {
-                        dados.w[p][i][j] = scanner.nextDouble();
-                    }
-                }
+            for (int p = 0; p < nbProducts; p++) {
+            	for (int i = 0; i < nbNodes; i++) {
+            		for (int j = 0; j < nbNodes; j++) {
+            			dados.w[p][i][j] = scanner.nextDouble();
+            		}
+            	}
             }
 
             // Read chi, alpha, delta
